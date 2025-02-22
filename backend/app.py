@@ -22,7 +22,11 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app, 
      supports_credentials=True,
-     origins=[os.getenv('CORS_ORIGIN', 'http://localhost:3000')])
+     origins=[
+         os.getenv('CORS_ORIGIN', 'http://localhost:3000'),
+         'https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app',
+         'https://www.arrivederci.app'
+     ])
 
 # Configuración de la base de datos y seguridad
 app.config.update(
