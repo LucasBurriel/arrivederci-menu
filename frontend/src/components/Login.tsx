@@ -62,7 +62,18 @@ const Login: React.FC = () => {
         withCredentials: true
       });
       console.log('Respuesta del servidor:', response.data);
-      navigate('/admin');
+      
+      // Verificar que el login fue exitoso antes de redirigir
+      const checkResponse = await axios.get(`${API_URL}/auth/check`, {
+        withCredentials: true
+      });
+      console.log('Verificación de autenticación:', checkResponse.data);
+      
+      if (checkResponse.data.autenticado) {
+        navigate('/admin');
+      } else {
+        setError('Error de autenticación: La sesión no se estableció correctamente');
+      }
     } catch (err) {
       console.error('Error completo:', err);
       const error = err as AxiosError<{ error: string }>;
