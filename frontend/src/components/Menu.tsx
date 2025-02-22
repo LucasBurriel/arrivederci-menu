@@ -19,7 +19,7 @@ import logo from '../assets/Logo4.svg';
 import background from '../assets/background.jpg';
 
 // Constantes
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const PLACEHOLDER_IMAGE = '/placeholder-food.jpg';
 
 // Interfaces

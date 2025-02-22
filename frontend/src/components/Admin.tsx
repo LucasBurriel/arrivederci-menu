@@ -31,7 +31,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 // Constantes
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Interfaces
 interface Producto {
