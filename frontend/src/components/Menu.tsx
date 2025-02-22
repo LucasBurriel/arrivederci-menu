@@ -10,9 +10,9 @@ import {
   Tabs,
   Tab,
   styled,
-  Skeleton,
   Alert,
   CircularProgress,
+  Theme,
 } from '@mui/material';
 import axios from 'axios';
 import logo from '../assets/Logo4.svg';
@@ -40,7 +40,7 @@ interface Categoria {
 }
 
 // Estilos actualizados
-const HeroSection = styled(Box)(({ theme }) => ({
+const HeroSection = styled(Box)(({ theme }: { theme: Theme }) => ({
   height: '100vh',
   width: '100%',
   position: 'relative',
@@ -125,7 +125,7 @@ const LogoImage = styled('img')(({ theme }) => ({
   transition: 'all 0.5s ease-out',
 }));
 
-const StyledTabs = styled(Tabs)({
+const StyledTabs = styled(Tabs)(() => ({
   '& .MuiTab-root': {
     color: '#4a2511',
     minWidth: 'auto',
@@ -138,17 +138,6 @@ const StyledTabs = styled(Tabs)({
   },
   '& .MuiTabs-scrollButtons': {
     color: '#4a2511',
-  },
-});
-
-const ProductCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-  '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: theme.shadows[8],
   },
 }));
 

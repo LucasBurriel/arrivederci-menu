@@ -27,7 +27,7 @@ import {
   Alert,
   styled,
 } from '@mui/material';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 // Constantes
@@ -54,15 +54,6 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
-}
-
-interface AxiosErrorResponse {
-  error?: string;
-  response?: {
-    data?: {
-      error?: string;
-    };
-  };
 }
 
 // Estilos
@@ -184,8 +175,11 @@ const Admin: React.FC = () => {
       handleCloseDialog();
       cargarDatos();
     } catch (err) {
-      const error = err as AxiosErrorResponse;
-      setError(error.response?.data?.error || 'Error al guardar el producto');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error || 'Error al guardar el producto');
+      } else {
+        setError('Error al guardar el producto');
+      }
     }
   };
 
@@ -195,8 +189,11 @@ const Admin: React.FC = () => {
         await axios.delete(`${API_URL}/productos/${id}`, { withCredentials: true });
         cargarDatos();
       } catch (err) {
-        const error = err as AxiosErrorResponse;
-        setError(error.response?.data?.error || 'Error al eliminar el producto');
+        if (axios.isAxiosError(err)) {
+          setError(err.response?.data?.error || 'Error al eliminar el producto');
+        } else {
+          setError('Error al eliminar el producto');
+        }
       }
     }
   };
@@ -209,8 +206,11 @@ const Admin: React.FC = () => {
       cargarDatos();
       setError(null);
     } catch (err) {
-      const error = err as AxiosErrorResponse;
-      setError(error.response?.data?.error || 'Error al crear la categoría');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error || 'Error al crear la categoría');
+      } else {
+        setError('Error al crear la categoría');
+      }
     }
   };
 
@@ -221,8 +221,11 @@ const Admin: React.FC = () => {
         cargarDatos();
         setError(null);
       } catch (err) {
-        const error = err as AxiosErrorResponse;
-        setError(error.response?.data?.error || 'Error al eliminar la categoría');
+        if (axios.isAxiosError(err)) {
+          setError(err.response?.data?.error || 'Error al eliminar la categoría');
+        } else {
+          setError('Error al eliminar la categoría');
+        }
       }
     }
   };
