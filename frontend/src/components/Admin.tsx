@@ -56,6 +56,15 @@ interface TabPanelProps {
   value: number;
 }
 
+interface AxiosErrorResponse {
+  error?: string;
+  response?: {
+    data?: {
+      error?: string;
+    };
+  };
+}
+
 // Estilos
 const AdminContainer = styled(Container)(({ theme }) => ({
   paddingTop: theme.spacing(4),
@@ -174,9 +183,9 @@ const Admin: React.FC = () => {
       }
       handleCloseDialog();
       cargarDatos();
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      setError(axiosError.response?.data?.error || 'Error al guardar el producto');
+    } catch (err) {
+      const error = err as AxiosErrorResponse;
+      setError(error.response?.data?.error || 'Error al guardar el producto');
     }
   };
 
@@ -185,9 +194,9 @@ const Admin: React.FC = () => {
       try {
         await axios.delete(`${API_URL}/productos/${id}`, { withCredentials: true });
         cargarDatos();
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        setError(axiosError.response?.data?.error || 'Error al eliminar el producto');
+      } catch (err) {
+        const error = err as AxiosErrorResponse;
+        setError(error.response?.data?.error || 'Error al eliminar el producto');
       }
     }
   };
@@ -199,9 +208,9 @@ const Admin: React.FC = () => {
       setNuevaCategoria({ nombre: '', valor: '' });
       cargarDatos();
       setError(null);
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      setError(axiosError.response?.data?.error || 'Error al crear la categoría');
+    } catch (err) {
+      const error = err as AxiosErrorResponse;
+      setError(error.response?.data?.error || 'Error al crear la categoría');
     }
   };
 
@@ -211,9 +220,9 @@ const Admin: React.FC = () => {
         await axios.delete(`${API_URL}/categorias/${id}`, { withCredentials: true });
         cargarDatos();
         setError(null);
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        setError(axiosError.response?.data?.error || 'Error al eliminar la categoría');
+      } catch (err) {
+        const error = err as AxiosErrorResponse;
+        setError(error.response?.data?.error || 'Error al eliminar la categoría');
       }
     }
   };

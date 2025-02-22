@@ -125,14 +125,10 @@ const LogoImage = styled('img')(({ theme }) => ({
   transition: 'all 0.5s ease-out',
 }));
 
-const StyledTabs = styled(Tabs)(({ theme }) => ({
+const StyledTabs = styled(Tabs)({
   '& .MuiTab-root': {
     color: '#4a2511',
     minWidth: 'auto',
-    padding: {
-      xs: theme.spacing(1.5, 2),
-      sm: theme.spacing(1.5, 3),
-    },
     '&.Mui-selected': {
       color: '#c9a45c',
     },
@@ -143,7 +139,7 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
   '& .MuiTabs-scrollButtons': {
     color: '#4a2511',
   },
-}));
+});
 
 const ProductCard = styled(Card)(({ theme }) => ({
   height: '100%',
@@ -170,7 +166,6 @@ const Menu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageLoadErrors, setImageLoadErrors] = useState<Set<number>>(new Set());
-  const [scrollY, setScrollY] = useState(0);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
 
