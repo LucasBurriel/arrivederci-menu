@@ -423,18 +423,18 @@ const Admin: React.FC = () => {
               fullWidth
               label="Nombre"
               value={nuevaCategoria.nombre}
-              onChange={(e) => setNuevaCategoria({ ...nuevaCategoria, nombre: e.target.value })}
+              onChange={(e) => {
+                const nombre = e.target.value;
+                const valor = nombre.toLowerCase()
+                  .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+                  .replace(/[^a-z0-9\s]/g, "") // Solo letras, números y espacios
+                  .trim()
+                  .replace(/\s+/g, '_'); // Espacios a guiones bajos
+                setNuevaCategoria({ nombre, valor });
+              }}
               margin="normal"
               required
-            />
-            <TextField
-              fullWidth
-              label="Valor"
-              value={nuevaCategoria.valor}
-              onChange={(e) => setNuevaCategoria({ ...nuevaCategoria, valor: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
-              margin="normal"
-              required
-              helperText="El valor se convertirá automáticamente a minúsculas y los espacios a guiones bajos"
+              helperText="El nombre que verán los clientes en el menú"
             />
           </DialogContent>
           <DialogActions>
