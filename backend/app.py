@@ -20,13 +20,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Configuración CORS más permisiva para debugging
 CORS(app, 
      supports_credentials=True,
-     origins=[
-         os.getenv('CORS_ORIGIN', 'http://localhost:3000'),
-         'https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app',
-         'https://www.arrivederci.app'
-     ])
+     resources={
+         r"/api/*": {
+             "origins": "*",
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Authorization"]
+         }
+     })
+
+@app.after_request
+def after_request(response):
+    logger.info(f"Request to {request.path} - Response status: {response.status}")
+    return response
 
 # Configuración de la base de datos y seguridad
 app.config.update(
@@ -178,8 +187,15 @@ def eliminar_categoria(id: int):
 # Rutas de Productos
 @app.route('/api/productos', methods=['GET'])
 def obtener_productos():
-    productos = Producto.query.all()
-    return jsonify([p.to_dict() for p in productos])
+    try:
+        logger.info("Iniciando obtención de productos")
+        productos = Producto.query.all()
+        resultado = [p.to_dict() for p in productos]
+        logger.info(f"Productos obtenidos exitosamente: {len(resultado)} productos")
+        return jsonify(resultado)
+    except Exception as e:
+        logger.error(f"Error al obtener productos: {str(e)}")
+        return jsonify({'error': 'Error al obtener productos'}), 500
 
 @app.route('/api/productos', methods=['POST'])
 @requiere_auth
