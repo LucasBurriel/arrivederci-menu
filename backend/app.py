@@ -27,22 +27,27 @@ CORS(app,
      resources={
          r"/api/*": {
              "origins": ["http://localhost:3000", 
+                        "https://arrivederci-cafe.vercel.app",
                         "https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app",
                         "https://www.arrivederci.app"],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
              "allow_headers": ["Content-Type", "Authorization"],
-             "expose_headers": ["Set-Cookie", "Content-Type"],
-             "supports_credentials": True,
-             "allow_credentials": True
+             "expose_headers": ["Content-Type"],
+             "supports_credentials": True
          }
      })
 
 @app.after_request
 def after_request(response):
     logger.info(f"Request to {request.path} - Response status: {response.status}")
-    # Permitir cookies en respuestas CORS
-    if 'Set-Cookie' in response.headers:
-        logger.info("Cookie siendo establecida en la respuesta")
+    # Configurar headers CORS para cookies
+    origin = request.headers.get('Origin')
+    if origin in ["http://localhost:3000", 
+                 "https://arrivederci-cafe.vercel.app",
+                 "https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app",
+                 "https://www.arrivederci.app"]:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
 # Configuración de la base de datos y seguridad
@@ -51,10 +56,10 @@ app.config.update(
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
     SECRET_KEY=os.getenv('SECRET_KEY', 'clave_desarrollo_temporal'),
     PERMANENT_SESSION_LIFETIME=timedelta(hours=1),
-    SESSION_COOKIE_SECURE=True,  # Siempre True para HTTPS
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='None',  # Cambiado a None para permitir cookies cross-site
-    SESSION_COOKIE_DOMAIN='.railway.app'  # Dominio específico para las cookies
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_DOMAIN=None  # Permitir que el navegador maneje el dominio de la cookie
 )
 
 db = SQLAlchemy(app)

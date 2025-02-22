@@ -100,7 +100,11 @@ const Login: React.FC = () => {
           </Alert>
         )}
 
-        <LoginForm component="form" onSubmit={handleSubmit}>
+        <LoginForm 
+          component="form" 
+          onSubmit={handleSubmit}
+          role="form"
+        >
           <TextField
             fullWidth
             label="Usuario"
@@ -110,6 +114,9 @@ const Login: React.FC = () => {
             margin="normal"
             required
             autoFocus
+            inputProps={{
+              'aria-label': 'Usuario'
+            }}
           />
           <TextField
             fullWidth
@@ -120,6 +127,9 @@ const Login: React.FC = () => {
             onChange={handleChange}
             margin="normal"
             required
+            inputProps={{
+              'aria-label': 'Contraseña'
+            }}
           />
           <Button
             type="submit"
