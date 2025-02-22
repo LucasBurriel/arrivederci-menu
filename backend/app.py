@@ -213,18 +213,39 @@ def obtener_productos():
 @app.route('/api/productos', methods=['POST'])
 @requiere_auth
 def crear_producto():
-    datos = request.json
-    nuevo_producto = Producto(
-        nombre=datos['nombre'],
-        descripcion=datos['descripcion'],
-        precio=datos['precio'],
-        categoria=datos['categoria'],
-        disponible=datos.get('disponible', True),
-        imagen_url=datos.get('imagen_url')
-    )
-    db.session.add(nuevo_producto)
-    db.session.commit()
-    return jsonify({'mensaje': 'Producto creado exitosamente'}), 201
+    try:
+        datos = request.json
+        # Validar que todos los campos requeridos estén presentes
+        campos_requeridos = ['nombre', 'descripcion', 'precio', 'categoria']
+        campos_faltantes = [campo for campo in campos_requeridos if campo not in datos or not datos[campo]]
+        
+        if campos_faltantes:
+            return jsonify({
+                'error': f'Faltan campos requeridos: {", ".join(campos_faltantes)}'
+            }), 400
+
+        # Validar que la categoría existe
+        categoria = Categoria.query.filter_by(valor=datos['categoria']).first()
+        if not categoria:
+            return jsonify({
+                'error': 'La categoría seleccionada no existe'
+            }), 400
+
+        nuevo_producto = Producto(
+            nombre=datos['nombre'],
+            descripcion=datos['descripcion'],
+            precio=datos['precio'],
+            categoria=datos['categoria'],
+            disponible=datos.get('disponible', True),
+            imagen_url=datos.get('imagen_url')
+        )
+        db.session.add(nuevo_producto)
+        db.session.commit()
+        return jsonify({'mensaje': 'Producto creado exitosamente'}), 201
+    except Exception as e:
+        logger.error(f"Error al crear producto: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Error al crear el producto. Por favor, verifica los datos ingresados.'}), 400
 
 @app.route('/api/productos/<int:id>', methods=['PUT'])
 @requiere_auth

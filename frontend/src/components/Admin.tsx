@@ -162,6 +162,15 @@ const Admin: React.FC = () => {
 
   const handleGuardar = async () => {
     try {
+      // Validar campos requeridos en el frontend
+      const camposRequeridos = ['nombre', 'descripcion', 'precio', 'categoria'];
+      const camposFaltantes = camposRequeridos.filter(campo => !productoEditando[campo]);
+      
+      if (camposFaltantes.length > 0) {
+        setError(`Por favor completa los siguientes campos: ${camposFaltantes.join(', ')}`);
+        return;
+      }
+
       if (modo === 'crear') {
         await axios.post('/productos', productoEditando);
       } else {
@@ -171,9 +180,12 @@ const Admin: React.FC = () => {
       cargarDatos();
     } catch (err) {
       if (axios.isAxiosError(err)) {
+        // Mostrar el mensaje de error del servidor si está disponible
         setError(err.response?.data?.error || 'Error al guardar el producto');
+        console.error('Error detallado:', err.response?.data);
       } else {
         setError('Error al guardar el producto');
+        console.error('Error no manejado:', err);
       }
     }
   };
