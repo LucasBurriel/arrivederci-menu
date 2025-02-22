@@ -57,13 +57,25 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/auth/login`, credentials, {
+      console.log('Intentando login con URL:', API_URL);
+      const response = await axios.post(`${API_URL}/auth/login`, credentials, {
         withCredentials: true
       });
+      console.log('Respuesta del servidor:', response.data);
       navigate('/admin');
     } catch (err) {
+      console.error('Error completo:', err);
       const error = err as AxiosError<{ error: string }>;
-      setError(error.response?.data?.error || 'Error al iniciar sesión');
+      if (error.response) {
+        console.error('Error del servidor:', error.response.data);
+        setError(error.response.data.error || 'Error del servidor: ' + error.response.status);
+      } else if (error.request) {
+        console.error('No se recibió respuesta:', error.request);
+        setError('No se pudo conectar con el servidor');
+      } else {
+        console.error('Error de configuración:', error.message);
+        setError('Error al configurar la petición: ' + error.message);
+      }
     }
   };
 

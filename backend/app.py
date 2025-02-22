@@ -26,9 +26,13 @@ CORS(app,
      supports_credentials=True,
      resources={
          r"/api/*": {
-             "origins": "*",
+             "origins": ["http://localhost:3000", 
+                        "https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app",
+                        "https://www.arrivederci.app"],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             "allow_headers": ["Content-Type", "Authorization"]
+             "allow_headers": ["Content-Type", "Authorization"],
+             "expose_headers": ["Content-Type"],
+             "supports_credentials": True
          }
      })
 
@@ -120,8 +124,12 @@ def handle_error(e):
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     try:
+        logger.info("Intento de login recibido")
         datos = request.json
+        logger.info(f"Datos recibidos: {datos}")
+        
         if not datos or 'username' not in datos or 'password' not in datos:
+            logger.warning("Datos de login incompletos")
             return jsonify({'error': 'Datos de login incompletos'}), 400
 
         usuario = Usuario.query.filter_by(username=datos['username']).first()
@@ -135,7 +143,7 @@ def login():
         return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
     except Exception as e:
         logger.error(f"Error en login: {str(e)}")
-        return jsonify({'error': 'Error interno del servidor'}), 500
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
