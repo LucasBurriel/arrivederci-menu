@@ -12,9 +12,6 @@ import {
 import axios, { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-// Constantes
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 // Estilos
 const LoginContainer = styled(Container)(({ theme }) => ({
   marginTop: theme.spacing(8),
@@ -57,16 +54,12 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      console.log('Intentando login con URL:', API_URL);
-      const response = await axios.post(`${API_URL}/auth/login`, credentials, {
-        withCredentials: true
-      });
+      console.log('API URL being used:', import.meta.env.VITE_API_URL);
+      const response = await axios.post('/auth/login', credentials);
       console.log('Respuesta del servidor:', response.data);
       
       // Verificar que el login fue exitoso antes de redirigir
-      const checkResponse = await axios.get(`${API_URL}/auth/check`, {
-        withCredentials: true
-      });
+      const checkResponse = await axios.get('/auth/check');
       console.log('Verificación de autenticación:', checkResponse.data);
       
       if (checkResponse.data.autenticado) {

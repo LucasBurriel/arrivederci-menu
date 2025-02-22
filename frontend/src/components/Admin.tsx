@@ -30,9 +30,6 @@ import {
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-// Constantes
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 // Interfaces
 interface Producto {
   id: number;
@@ -112,7 +109,7 @@ const Admin: React.FC = () => {
   // Funciones
   const verificarAutenticacion = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_URL}/auth/check`, {
+      const response = await axios.get('/auth/check', {
         withCredentials: true
       });
       if (!response.data.autenticado) {
@@ -124,20 +121,18 @@ const Admin: React.FC = () => {
   }, [navigate]);
 
   const cargarDatos = useCallback(async () => {
+    console.log('API URL being used:', import.meta.env.VITE_API_URL);
     try {
       const [productosRes, categoriasRes] = await Promise.all([
-        axios.get(`${API_URL}/productos`, { withCredentials: true }),
-        axios.get(`${API_URL}/categorias`, { withCredentials: true })
+        axios.get('/productos'),
+        axios.get('/categorias')
       ]);
       setProductos(productosRes.data);
       setCategorias(categoriasRes.data);
     } catch (error) {
       console.error('Error al cargar datos:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        navigate('/login');
-      }
     }
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     verificarAutenticacion();
@@ -146,7 +141,7 @@ const Admin: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
+      await axios.post('/auth/logout', {}, { withCredentials: true });
       navigate('/login');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -168,9 +163,9 @@ const Admin: React.FC = () => {
   const handleGuardar = async () => {
     try {
       if (modo === 'crear') {
-        await axios.post(`${API_URL}/productos`, productoEditando, { withCredentials: true });
+        await axios.post('/productos', productoEditando);
       } else {
-        await axios.put(`${API_URL}/productos/${productoEditando.id}`, productoEditando, { withCredentials: true });
+        await axios.put(`/productos/${productoEditando.id}`, productoEditando);
       }
       handleCloseDialog();
       cargarDatos();
@@ -186,7 +181,7 @@ const Admin: React.FC = () => {
   const handleEliminar = async (id: number) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
       try {
-        await axios.delete(`${API_URL}/productos/${id}`, { withCredentials: true });
+        await axios.delete(`/productos/${id}`);
         cargarDatos();
       } catch (err) {
         if (axios.isAxiosError(err)) {
@@ -200,24 +195,19 @@ const Admin: React.FC = () => {
 
   const handleGuardarCategoria = async () => {
     try {
-      await axios.post(`${API_URL}/categorias`, nuevaCategoria, { withCredentials: true });
+      await axios.post('/categorias', nuevaCategoria);
       setOpenCategoriaDialog(false);
       setNuevaCategoria({ nombre: '', valor: '' });
       cargarDatos();
-      setError(null);
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error || 'Error al crear la categoría');
-      } else {
-        setError('Error al crear la categoría');
-      }
+      console.error('Error al crear categoría:', err);
     }
   };
 
   const handleEliminarCategoria = async (id: number) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar esta categoría?')) {
       try {
-        await axios.delete(`${API_URL}/categorias/${id}`, { withCredentials: true });
+        await axios.delete(`/categorias/${id}`);
         cargarDatos();
         setError(null);
       } catch (err) {
