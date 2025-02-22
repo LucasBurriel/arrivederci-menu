@@ -114,7 +114,7 @@ const HeroOverlay = styled(Box)({
   },
 });
 
-const LogoImage = styled('img')(({ theme }) => ({
+const LogoImage = styled('img')({
   width: '90%',
   maxWidth: '400px',
   height: 'auto',
@@ -123,7 +123,7 @@ const LogoImage = styled('img')(({ theme }) => ({
   filter: 'brightness(0) invert(1) drop-shadow(0px 0px 10px rgba(255,255,255,0.5))',
   padding: '20px',
   transition: 'all 0.5s ease-out',
-}));
+});
 
 const StyledTabs = styled(Tabs)(() => ({
   '& .MuiTab-root': {
