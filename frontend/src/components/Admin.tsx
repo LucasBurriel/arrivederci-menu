@@ -120,8 +120,7 @@ const Admin: React.FC = () => {
   const [nuevaCategoria, setNuevaCategoria] = useState({ nombre: '', valor: '' });
   const [modo, setModo] = useState<'crear' | 'editar'>('crear');
   const [tabActiva, setTabActiva] = useState(0);
-  const [dialogError, setDialogError] = useState<string | null>(null);
-  const [categoriaError, setCategoriaError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const navigate = useNavigate();
 
@@ -176,7 +175,12 @@ const Admin: React.FC = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setProductoEditando({});
-    setDialogError(null);
+    setErrorMessage(null);
+  };
+
+  const mostrarError = (mensaje: string) => {
+    setErrorMessage(mensaje);
+    setOpenSnackbar(true);
   };
 
   const handleGuardar = async () => {
@@ -190,8 +194,7 @@ const Admin: React.FC = () => {
         if (!productoEditando.precio) camposFaltantes.push('precio');
         if (!productoEditando.categoria) camposFaltantes.push('categoría');
         
-        setDialogError(`Por favor completa los siguientes campos: ${camposFaltantes.join(', ')}`);
-        setOpenSnackbar(true);
+        mostrarError(`Por favor completa los siguientes campos: ${camposFaltantes.join(', ')}`);
         return;
       }
 
@@ -204,11 +207,9 @@ const Admin: React.FC = () => {
       cargarDatos();
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setDialogError(err.response?.data?.error || 'Error al guardar el producto');
-        setOpenSnackbar(true);
+        mostrarError(err.response?.data?.error || 'Error al guardar el producto');
       } else {
-        setDialogError('Error al guardar el producto');
-        setOpenSnackbar(true);
+        mostrarError('Error al guardar el producto');
       }
     }
   };
@@ -220,9 +221,9 @@ const Admin: React.FC = () => {
         cargarDatos();
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          setDialogError(err.response?.data?.error || 'Error al eliminar el producto');
+          mostrarError(err.response?.data?.error || 'Error al eliminar el producto');
         } else {
-          setDialogError('Error al eliminar el producto');
+          mostrarError('Error al eliminar el producto');
         }
       }
     }
@@ -233,15 +234,13 @@ const Admin: React.FC = () => {
       await axios.post('/categorias', nuevaCategoria);
       setOpenCategoriaDialog(false);
       setNuevaCategoria({ nombre: '', valor: '' });
-      setCategoriaError(null);
       cargarDatos();
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setCategoriaError(err.response?.data?.error || 'Error al crear la categoría');
+        mostrarError(err.response?.data?.error || 'Error al crear la categoría');
       } else {
-        setCategoriaError('Error al crear la categoría');
+        mostrarError('Error al crear la categoría');
       }
-      console.error('Error al crear categoría:', err);
     }
   };
 
@@ -250,12 +249,11 @@ const Admin: React.FC = () => {
       try {
         await axios.delete(`/categorias/${id}`);
         cargarDatos();
-        setCategoriaError(null);
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          setCategoriaError(err.response?.data?.error || 'Error al eliminar la categoría');
+          mostrarError(err.response?.data?.error || 'Error al eliminar la categoría');
         } else {
-          setCategoriaError('Error al eliminar la categoría');
+          mostrarError('Error al eliminar la categoría');
         }
       }
     }
@@ -444,15 +442,6 @@ const Admin: React.FC = () => {
         <Dialog open={openCategoriaDialog} onClose={() => setOpenCategoriaDialog(false)} maxWidth="sm" fullWidth>
           <DialogTitle>Agregar Categoría</DialogTitle>
           <DialogContent>
-            {categoriaError && (
-              <Alert 
-                severity="error" 
-                sx={{ mt: 2, mb: 2, width: '100%' }} 
-                onClose={() => setCategoriaError(null)}
-              >
-                {categoriaError}
-              </Alert>
-            )}
             <TextField
               fullWidth
               label="Nombre"
@@ -485,13 +474,14 @@ const Admin: React.FC = () => {
         autoHideDuration={6000}
         onClose={() => setOpenSnackbar(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{ zIndex: 9999 }}
       >
         <Alert 
           onClose={() => setOpenSnackbar(false)} 
           severity="error" 
           sx={{ width: '100%' }}
         >
-          {dialogError}
+          {errorMessage}
         </Alert>
       </Snackbar>
     </AdminContainer>
