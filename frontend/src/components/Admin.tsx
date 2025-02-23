@@ -103,8 +103,8 @@ const Admin: React.FC = () => {
   const [nuevaCategoria, setNuevaCategoria] = useState({ nombre: '', valor: '' });
   const [modo, setModo] = useState<'crear' | 'editar'>('crear');
   const [tabActiva, setTabActiva] = useState(0);
-  const [error, setError] = useState<string | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const [categoriaError, setCategoriaError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Funciones
@@ -202,9 +202,9 @@ const Admin: React.FC = () => {
         cargarDatos();
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.error || 'Error al eliminar el producto');
+          setDialogError(err.response?.data?.error || 'Error al eliminar el producto');
         } else {
-          setError('Error al eliminar el producto');
+          setDialogError('Error al eliminar el producto');
         }
       }
     }
@@ -215,8 +215,14 @@ const Admin: React.FC = () => {
       await axios.post('/categorias', nuevaCategoria);
       setOpenCategoriaDialog(false);
       setNuevaCategoria({ nombre: '', valor: '' });
+      setCategoriaError(null);
       cargarDatos();
     } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setCategoriaError(err.response?.data?.error || 'Error al crear la categoría');
+      } else {
+        setCategoriaError('Error al crear la categoría');
+      }
       console.error('Error al crear categoría:', err);
     }
   };
@@ -226,12 +232,12 @@ const Admin: React.FC = () => {
       try {
         await axios.delete(`/categorias/${id}`);
         cargarDatos();
-        setError(null);
+        setCategoriaError(null);
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.error || 'Error al eliminar la categoría');
+          setCategoriaError(err.response?.data?.error || 'Error al eliminar la categoría');
         } else {
-          setError('Error al eliminar la categoría');
+          setCategoriaError('Error al eliminar la categoría');
         }
       }
     }
@@ -254,12 +260,6 @@ const Admin: React.FC = () => {
           <Tab label="Categorías" />
         </Tabs>
       </TabBox>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
 
       <TabPanel value={tabActiva} index={0}>
         <Button
@@ -321,7 +321,7 @@ const Admin: React.FC = () => {
             {dialogError && (
               <Alert 
                 severity="error" 
-                sx={{ mb: 2, width: '100%' }} 
+                sx={{ mt: 2, mb: 2, width: '100%' }} 
                 onClose={() => setDialogError(null)}
               >
                 {dialogError}
@@ -435,6 +435,15 @@ const Admin: React.FC = () => {
         <Dialog open={openCategoriaDialog} onClose={() => setOpenCategoriaDialog(false)} maxWidth="sm" fullWidth>
           <DialogTitle>Agregar Categoría</DialogTitle>
           <DialogContent>
+            {categoriaError && (
+              <Alert 
+                severity="error" 
+                sx={{ mt: 2, mb: 2, width: '100%' }} 
+                onClose={() => setCategoriaError(null)}
+              >
+                {categoriaError}
+              </Alert>
+            )}
             <TextField
               fullWidth
               label="Nombre"
