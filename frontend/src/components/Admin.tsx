@@ -321,7 +321,7 @@ const Admin: React.FC = () => {
             {dialogError && (
               <Alert 
                 severity="error" 
-                sx={{ mt: 2, mb: 2, width: '100%' }} 
+                sx={{ mb: 2, width: '100%' }}
                 onClose={() => setDialogError(null)}
               >
                 {dialogError}
