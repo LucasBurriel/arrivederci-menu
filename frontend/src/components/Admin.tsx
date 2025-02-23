@@ -104,6 +104,7 @@ const Admin: React.FC = () => {
   const [modo, setModo] = useState<'crear' | 'editar'>('crear');
   const [tabActiva, setTabActiva] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Funciones
@@ -157,17 +158,21 @@ const Admin: React.FC = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setProductoEditando({});
-    setError(null);
+    setDialogError(null);
   };
 
   const handleGuardar = async () => {
     try {
       // Validar campos requeridos en el frontend
-      const camposRequeridos = ['nombre', 'descripcion', 'precio', 'categoria'];
-      const camposFaltantes = camposRequeridos.filter(campo => !productoEditando[campo]);
-      
-      if (camposFaltantes.length > 0) {
-        setError(`Por favor completa los siguientes campos: ${camposFaltantes.join(', ')}`);
+      if (!productoEditando.nombre || !productoEditando.descripcion || 
+          !productoEditando.precio || !productoEditando.categoria) {
+        const camposFaltantes = [];
+        if (!productoEditando.nombre) camposFaltantes.push('nombre');
+        if (!productoEditando.descripcion) camposFaltantes.push('descripción');
+        if (!productoEditando.precio) camposFaltantes.push('precio');
+        if (!productoEditando.categoria) camposFaltantes.push('categoría');
+        
+        setDialogError(`Por favor completa los siguientes campos: ${camposFaltantes.join(', ')}`);
         return;
       }
 
@@ -181,10 +186,10 @@ const Admin: React.FC = () => {
     } catch (err) {
       if (axios.isAxiosError(err)) {
         // Mostrar el mensaje de error del servidor si está disponible
-        setError(err.response?.data?.error || 'Error al guardar el producto');
+        setDialogError(err.response?.data?.error || 'Error al guardar el producto');
         console.error('Error detallado:', err.response?.data);
       } else {
-        setError('Error al guardar el producto');
+        setDialogError('Error al guardar el producto');
         console.error('Error no manejado:', err);
       }
     }
@@ -313,6 +318,15 @@ const Admin: React.FC = () => {
             {modo === 'crear' ? 'Agregar Producto' : 'Editar Producto'}
           </DialogTitle>
           <DialogContent>
+            {dialogError && (
+              <Alert 
+                severity="error" 
+                sx={{ mb: 2, width: '100%' }} 
+                onClose={() => setDialogError(null)}
+              >
+                {dialogError}
+              </Alert>
+            )}
             <TextField
               fullWidth
               label="Nombre"
