@@ -26,6 +26,7 @@ import {
   Typography,
   Alert,
   styled,
+  Snackbar,
 } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -121,6 +122,7 @@ const Admin: React.FC = () => {
   const [tabActiva, setTabActiva] = useState(0);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [categoriaError, setCategoriaError] = useState<string | null>(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
   const navigate = useNavigate();
 
   // Funciones
@@ -189,6 +191,7 @@ const Admin: React.FC = () => {
         if (!productoEditando.categoria) camposFaltantes.push('categoría');
         
         setDialogError(`Por favor completa los siguientes campos: ${camposFaltantes.join(', ')}`);
+        setOpenSnackbar(true);
         return;
       }
 
@@ -201,12 +204,11 @@ const Admin: React.FC = () => {
       cargarDatos();
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        // Mostrar el mensaje de error del servidor si está disponible
         setDialogError(err.response?.data?.error || 'Error al guardar el producto');
-        console.error('Error detallado:', err.response?.data);
+        setOpenSnackbar(true);
       } else {
         setDialogError('Error al guardar el producto');
-        console.error('Error no manejado:', err);
+        setOpenSnackbar(true);
       }
     }
   };
@@ -334,17 +336,6 @@ const Admin: React.FC = () => {
             {modo === 'crear' ? 'Agregar Producto' : 'Editar Producto'}
           </DialogTitle>
           <DialogContent>
-            {dialogError && (
-              <ErrorMessage>
-                <span>{dialogError}</span>
-                <span 
-                  className="close-button"
-                  onClick={() => setDialogError(null)}
-                >
-                  ×
-                </span>
-              </ErrorMessage>
-            )}
             <TextField
               fullWidth
               label="Nombre"
@@ -488,6 +479,21 @@ const Admin: React.FC = () => {
           </DialogActions>
         </Dialog>
       </TabPanel>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setOpenSnackbar(false)} 
+          severity="error" 
+          sx={{ width: '100%' }}
+        >
+          {dialogError}
+        </Alert>
+      </Snackbar>
     </AdminContainer>
   );
 };
