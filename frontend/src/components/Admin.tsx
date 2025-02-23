@@ -76,6 +76,22 @@ const ActionButton = styled(Button)(({ theme }) => ({
   marginRight: theme.spacing(1),
 }));
 
+const ErrorMessage = styled('div')(({ theme }) => ({
+  backgroundColor: '#fdeded',
+  color: '#5f2120',
+  padding: '8px 16px',
+  borderRadius: '4px',
+  marginBottom: '16px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  '& .close-button': {
+    cursor: 'pointer',
+    color: '#5f2120',
+    marginLeft: '8px'
+  }
+}));
+
 // Componentes
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
@@ -317,20 +333,18 @@ const Admin: React.FC = () => {
           <DialogTitle>
             {modo === 'crear' ? 'Agregar Producto' : 'Editar Producto'}
           </DialogTitle>
-          {dialogError && (
-            <Alert 
-              severity="error" 
-              sx={{ 
-                mx: 3,
-                mb: 1,
-                width: 'auto'
-              }}
-              onClose={() => setDialogError(null)}
-            >
-              {dialogError}
-            </Alert>
-          )}
           <DialogContent>
+            {dialogError && (
+              <ErrorMessage>
+                <span>{dialogError}</span>
+                <span 
+                  className="close-button"
+                  onClick={() => setDialogError(null)}
+                >
+                  ×
+                </span>
+              </ErrorMessage>
+            )}
             <TextField
               fullWidth
               label="Nombre"
