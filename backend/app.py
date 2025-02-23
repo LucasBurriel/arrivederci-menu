@@ -26,28 +26,37 @@ CORS(app,
      supports_credentials=True,
      resources={
          r"/api/*": {
-             "origins": ["http://localhost:3000", 
+             "origins": ["https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app",
                         "https://arrivederci-cafe.vercel.app",
-                        "https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app",
-                        "https://www.arrivederci.app"],
+                        "http://localhost:3000"],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
              "allow_headers": ["Content-Type", "Authorization"],
              "expose_headers": ["Content-Type"],
-             "supports_credentials": True
+             "supports_credentials": True,
+             "send_wildcard": False
          }
      })
 
 @app.after_request
 def after_request(response):
     logger.info(f"Request to {request.path} - Response status: {response.status}")
-    # Configurar headers CORS para cookies
     origin = request.headers.get('Origin')
-    if origin in ["http://localhost:3000", 
+    
+    if origin in ["https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app",
                  "https://arrivederci-cafe.vercel.app",
-                 "https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app",
-                 "https://www.arrivederci.app"]:
+                 "http://localhost:3000"]:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Max-Age'] = '3600'
+        
+        if request.method == 'OPTIONS':
+            response.headers['Access-Control-Max-Age'] = '3600'
+            response.status_code = 204
+            return response
+    
+    logger.info(f"Headers de respuesta CORS: {dict(response.headers)}")
     return response
 
 # Configuración de la base de datos y seguridad
@@ -59,7 +68,8 @@ app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='None',
-    SESSION_COOKIE_DOMAIN=None  # Permitir que el navegador maneje el dominio de la cookie
+    SESSION_COOKIE_PATH='/',
+    SESSION_COOKIE_DOMAIN=None
 )
 
 db = SQLAlchemy(app)
