@@ -317,16 +317,20 @@ const Admin: React.FC = () => {
           <DialogTitle>
             {modo === 'crear' ? 'Agregar Producto' : 'Editar Producto'}
           </DialogTitle>
+          {dialogError && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mx: 3,
+                mb: 1,
+                width: 'auto'
+              }}
+              onClose={() => setDialogError(null)}
+            >
+              {dialogError}
+            </Alert>
+          )}
           <DialogContent>
-            {dialogError && (
-              <Alert 
-                severity="error" 
-                sx={{ mb: 2, width: '100%' }}
-                onClose={() => setDialogError(null)}
-              >
-                {dialogError}
-              </Alert>
-            )}
             <TextField
               fullWidth
               label="Nombre"
