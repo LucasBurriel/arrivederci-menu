@@ -8,6 +8,7 @@ from datetime import timedelta
 from functools import wraps
 import os
 from dotenv import load_dotenv
+from crear_datos_ejemplo import crear_datos_ejemplo
 
 # Cargar variables de entorno
 load_dotenv()
@@ -281,12 +282,21 @@ def eliminar_producto(id: int):
     db.session.commit()
     return jsonify({'mensaje': 'Producto eliminado exitosamente'})
 
+# Después de crear las tablas
+with app.app_context():
+    try:
+        logger.info("Intentando conectar a la base de datos...")
+        db.create_all()
+        logger.info("✅ Tablas creadas exitosamente")
+        
+        # Verificar la conexión
+        db.session.execute('SELECT 1')
+        logger.info("✅ Conexión a la base de datos verificada")
+        
+        crear_datos_ejemplo()
+    except Exception as e:
+        logger.error(f"❌ Error al inicializar la base de datos: {str(e)}")
+        raise
+
 if __name__ == '__main__':
-    with app.app_context():
-        try:
-            db.create_all()
-            logger.info("Base de datos inicializada correctamente")
-        except Exception as e:
-            logger.error(f"Error al inicializar la base de datos: {str(e)}")
-    
     app.run(debug=True) 
