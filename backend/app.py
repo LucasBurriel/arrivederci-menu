@@ -293,7 +293,7 @@ with app.app_context():
         db.session.execute('SELECT 1')
         logger.info("✅ Conexión a la base de datos verificada")
         
-        crear_datos_ejemplo()
+        crear_datos_ejemplo(app, db, Categoria, Producto)
     except Exception as e:
         logger.error(f"❌ Error al inicializar la base de datos: {str(e)}")
         raise

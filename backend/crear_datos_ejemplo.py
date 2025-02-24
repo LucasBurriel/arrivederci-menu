@@ -1,7 +1,6 @@
 from typing import List, Dict, Any
-from app import app, db, Categoria, Producto
 
-def crear_datos_ejemplo() -> None:
+def crear_datos_ejemplo(app, db, Categoria, Producto) -> None:
     """Crea datos de ejemplo para la aplicación solo si no existen datos."""
     with app.app_context():
         # Verificar si ya existen datos
