@@ -47,14 +47,16 @@ def after_request(response):
     if origin in ["https://arrivederci-cafe-git-main-lucasburriels-projects.vercel.app",
                  "https://arrivederci-cafe.vercel.app",
                  "http://localhost:3000"]:
-        response.headers.set('Access-Control-Allow-Origin', origin)
-        response.headers.set('Access-Control-Allow-Credentials', 'true')
-        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        response.headers.set('Access-Control-Max-Age', '3600')
+        cors_headers = {
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Max-Age': '3600'
+        }
+        response.headers.update(cors_headers)
         
         if request.method == 'OPTIONS':
-            response.headers.set('Access-Control-Max-Age', '3600')
             response.status_code = 204
             return response
     
