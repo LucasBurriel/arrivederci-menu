@@ -9,6 +9,7 @@ from functools import wraps
 import os
 from dotenv import load_dotenv
 from crear_datos_ejemplo import crear_datos_ejemplo
+from sqlalchemy import text
 
 # Cargar variables de entorno
 load_dotenv()
@@ -290,7 +291,7 @@ with app.app_context():
         logger.info("✅ Tablas creadas exitosamente")
         
         # Verificar la conexión
-        db.session.execute('SELECT 1')
+        db.session.execute(text('SELECT 1'))
         logger.info("✅ Conexión a la base de datos verificada")
         
         crear_datos_ejemplo(app, db, Categoria, Producto)
