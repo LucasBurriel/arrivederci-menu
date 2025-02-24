@@ -77,22 +77,6 @@ const ActionButton = styled(Button)(({ theme }) => ({
   marginRight: theme.spacing(1),
 }));
 
-const ErrorMessage = styled('div')(({ theme }) => ({
-  backgroundColor: '#fdeded',
-  color: '#5f2120',
-  padding: '8px 16px',
-  borderRadius: '4px',
-  marginBottom: '16px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  '& .close-button': {
-    cursor: 'pointer',
-    color: '#5f2120',
-    marginLeft: '8px'
-  }
-}));
-
 // Componentes
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
@@ -175,12 +159,6 @@ const Admin: React.FC = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setProductoEditando({});
-    setErrorMessage(null);
-  };
-
-  const mostrarError = (mensaje: string) => {
-    setErrorMessage(mensaje);
-    setOpenSnackbar(true);
   };
 
   const handleGuardar = async () => {
@@ -257,6 +235,11 @@ const Admin: React.FC = () => {
         }
       }
     }
+  };
+
+  const mostrarError = (mensaje: string) => {
+    setErrorMessage(mensaje);
+    setOpenSnackbar(true);
   };
 
   return (
