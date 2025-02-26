@@ -52,4 +52,8 @@ yarn-error.log*
 
 # Sistema operativo
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Archivos privados
+*.private.md
+*.private.txt 
