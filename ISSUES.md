@@ -21,6 +21,23 @@
   - Evaluar usar un sistema de notificaciones diferente
   - Revisar la documentación de Material-UI sobre manejo de modales y notificaciones
 
+#### 2. Animaciones en Dispositivos Móviles
+- **Estado**: Sin resolver
+- **Descripción**: Las animaciones resultan molestas y problemáticas en dispositivos móviles
+- **Detalles**:
+  - Al hacer scroll, los productos y categorías se mueven lateralmente
+  - Los efectos hover causan problemas en dispositivos táctiles
+  - Las animaciones hacen que la experiencia móvil sea menos fluida
+- **Intentos de solución**:
+  1. Se eliminaron los efectos hover en las tarjetas
+  2. Se implementó una media query `@media (hover: none)` para deshabilitar efectos
+  3. Se creó una interfaz separada para móviles sin animaciones
+- **Próximos pasos sugeridos**:
+  - Reconsiderar completamente la implementación de animaciones
+  - Evaluar el uso de una biblioteca especializada en animaciones responsivas
+  - Simplificar la interfaz para dispositivos móviles
+  - Realizar pruebas en diferentes dispositivos móviles
+
 ## Backend/Infraestructura
 
 ### Alta Prioridad
@@ -51,4 +68,4 @@
 
 ---
 
-_Última actualización: [Fecha actual]_ 
+_Última actualización: 21 de junio de 2024_ 
