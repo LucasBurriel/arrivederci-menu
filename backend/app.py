@@ -184,6 +184,98 @@ def handle_error(e):
     logger.error(f"Error no manejado: {str(e)}")
     return jsonify({'error': 'Error interno del servidor'}), 500
 
+# Health check endpoint
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """
+    Endpoint para verificar el estado del servicio.
+    Comprueba:
+     - API funcionando
+     - Conexión a la base de datos
+     - Estado del sistema
+    """
+    try:
+        # Check sistema básico
+        status = {
+            'status': 'UP',
+            'timestamp': datetime.utcnow().isoformat(),
+            'version': '1.0.0',
+            'checks': {}
+        }
+        
+        # Check base de datos
+        try:
+            # Verificar conexión a la base de datos
+            start_time = datetime.utcnow()
+            result = db.session.execute(text('SELECT 1')).fetchone()
+            end_time = datetime.utcnow()
+            response_time = (end_time - start_time).total_seconds() * 1000  # ms
+            
+            # Contar registros en tablas principales para verificar datos
+            producto_count = Producto.query.count()
+            categoria_count = Categoria.query.count()
+            
+            status['checks']['database'] = {
+                'status': 'UP',
+                'responseTime': f"{response_time:.2f}ms",
+                'message': 'Conexión exitosa',
+                'details': {
+                    'productos': producto_count,
+                    'categorias': categoria_count
+                }
+            }
+        except Exception as e:
+            logger.error(f"Error en health check de base de datos: {str(e)}")
+            status['status'] = 'DOWN'
+            status['checks']['database'] = {
+                'status': 'DOWN',
+                'message': f"Error: {str(e)}"
+            }
+        
+        # Check espacio en disco y memoria si es posible
+        try:
+            import psutil
+            disk = psutil.disk_usage('/')
+            memory = psutil.virtual_memory()
+            
+            status['checks']['resources'] = {
+                'status': 'UP',
+                'disk': {
+                    'total': f"{disk.total / (1024**3):.1f}GB",
+                    'free': f"{disk.free / (1024**3):.1f}GB",
+                    'percent': f"{disk.percent}%"
+                },
+                'memory': {
+                    'total': f"{memory.total / (1024**2):.1f}MB",
+                    'available': f"{memory.available / (1024**2):.1f}MB",
+                    'percent': f"{memory.percent}%"
+                }
+            }
+            
+            # Advertencias si hay recursos bajos
+            if disk.percent > 90 or memory.percent > 85:
+                status['checks']['resources']['warnings'] = []
+                if disk.percent > 90:
+                    status['checks']['resources']['warnings'].append('Espacio en disco bajo')
+                if memory.percent > 85:
+                    status['checks']['resources']['warnings'].append('Memoria disponible baja')
+        except ImportError:
+            # psutil puede no estar disponible en todos los entornos
+            pass
+        except Exception as e:
+            logger.warning(f"No se pudo obtener información de recursos: {str(e)}")
+        
+        # Determinar código HTTP basado en estado general
+        http_code = 200 if status['status'] == 'UP' else 503
+        return jsonify(status), http_code
+    except Exception as e:
+        logger.error(f"Error general en health check: {str(e)}")
+        return jsonify({
+            'status': 'DOWN',
+            'timestamp': datetime.utcnow().isoformat(),
+            'message': f"Error: {str(e)}"
+        }), 500
+
 # Rutas de autenticación mejoradas
 @app.route('/api/auth/login', methods=['POST'])
 def login():

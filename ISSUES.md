@@ -72,21 +72,29 @@
   - Actualizar el archivo index.html con las referencias correspondientes
 
 #### 5. Problemas de Conexión en el Menú
-- **Estado**: Parcialmente resuelto
-- **Descripción**: El menú principal deja de funcionar intermitentemente con el error "Error al cargar el menú"
+- **Estado**: Necesita atención urgente
+- **Descripción**: El menú principal falla con error 500 del servidor
 - **Detalles**:
-  - El componente Menu.tsx no logra conectarse con el backend API en algunas situaciones
-  - Se ha mejorado el código para proporcionar más información de diagnóstico
-  - Se aumentó el timeout de 10 a 15 segundos
-  - Se añadieron mensajes de error más específicos según el tipo de problema
-- **Solución actual**:
-  1. Se implementó un mejor sistema de logs para diagnóstico
-  2. Se secuencializaron las peticiones para identificar mejor los fallos
-  3. Se agregó manejo de errores específicos por código HTTP
-- **Próximos pasos**:
-  - Monitorear la situación con los nuevos logs implementados
-  - Evaluar si es necesario un sistema de reintento automático (retry)
-  - Investigar si hay problemas de CORS o configuración en el entorno de producción
+  - El componente Menu.tsx se conecta correctamente al backend pero recibe error 500
+  - Los logs muestran: "GET https://arrivederci-menu-production.up.railway.app/api/productos 500"
+  - El error se muestra correctamente al usuario como: "Error en el servidor. El equipo técnico ha sido notificado."
+  - Esta es una falla crítica que impide el funcionamiento de la aplicación en producción
+- **Diagnóstico**:
+  - Se ha confirmado que es un error del lado del servidor (no del frontend)
+  - Posibles causas:
+    1. Problemas con la conexión a PostgreSQL en Railway
+    2. Error en el código del backend al procesar la solicitud
+    3. Falta de recursos en el servidor
+    4. Posiblemente relacionado con el issue #1 (Persistencia de Datos en Railway)
+- **Acciones inmediatas**:
+  1. Revisar los logs del servidor en Railway para encontrar detalles específicos del error
+  2. Verificar el estado de la base de datos en Railway
+  3. Intentar reiniciar el servicio en Railway
+  4. Examinar si hubo cambios recientes en el código del backend
+- **Acciones a largo plazo**:
+  - Implementar mejor monitoreo y alertas para problemas de backend
+  - Añadir endpoint de health check para verificar estado del servidor y la base de datos
+  - Considerar desplegar en un entorno de staging separado
 
 ## Backend/Infraestructura
 
