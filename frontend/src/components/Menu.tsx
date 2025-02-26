@@ -299,6 +299,7 @@ const ProductCard: React.FC<{
             py: 0.5,
             borderRadius: 1,
           }}
+          aria-label={`Precio: ${producto.precio.toFixed(2)} euros`}
         >
           ${producto.precio.toFixed(2)}
         </Typography>
@@ -444,7 +445,7 @@ const Menu: React.FC = () => {
         </HeroSection>
         <Container maxWidth="lg" sx={{ py: 4 }}>
           <LoadingContainer>
-            <CircularProgress />
+            <CircularProgress aria-label="Cargando el menú" />
           </LoadingContainer>
         </Container>
       </>
@@ -459,10 +460,18 @@ const Menu: React.FC = () => {
       variant="scrollable"
       scrollButtons="auto"
       allowScrollButtonsMobile
+      aria-label="Categorías de productos"
+      role="tablist"
     >
-      <Tab label="Todos" value="todos" />
+      <Tab label="Todos" value="todos" role="tab" aria-selected={categoriaActiva === "todos"} />
       {categorias.map((cat) => (
-        <Tab key={cat.valor} label={cat.nombre} value={cat.valor} />
+        <Tab 
+          key={cat.valor} 
+          label={cat.nombre} 
+          value={cat.valor} 
+          role="tab" 
+          aria-selected={categoriaActiva === cat.valor}
+        />
       ))}
     </StyledTabs>
   );
@@ -472,7 +481,7 @@ const Menu: React.FC = () => {
     return (
       <>
         <GlobalStyles styles={noHoverStyles} />
-        <HeroSection>
+        <HeroSection role="banner">
           <HeroOverlay />
           <LogoImage 
             src={logo}
@@ -480,9 +489,14 @@ const Menu: React.FC = () => {
           />
         </HeroSection>
 
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container maxWidth="lg" sx={{ py: 4 }} role="main">
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            <Alert 
+              severity="error" 
+              sx={{ mb: 3 }} 
+              onClose={() => setError(null)}
+              aria-live="assertive"
+            >
               {error}
             </Alert>
           )}
@@ -491,7 +505,7 @@ const Menu: React.FC = () => {
             {categoryTabs}
           </StaticTabs>
 
-          <Grid container spacing={4}>
+          <Grid container spacing={4} aria-label="Lista de productos" role="region">
             {productosFiltrados.map((producto) => (
               <Grid item xs={12} sm={6} md={4} key={producto.id}>
                 <ProductCard 
@@ -512,7 +526,7 @@ const Menu: React.FC = () => {
   return (
     <>
       <GlobalStyles styles={noHoverStyles} />
-      <HeroSection>
+      <HeroSection role="banner">
         <HeroOverlay />
         <LogoImage 
           src={logo} 
@@ -526,9 +540,14 @@ const Menu: React.FC = () => {
         />
       </HeroSection>
 
-      <AnimatedContainer maxWidth="lg" sx={{ py: 4 }} $scrollDirection={scrollDirection}>
+      <AnimatedContainer maxWidth="lg" sx={{ py: 4 }} $scrollDirection={scrollDirection} role="main">
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          <Alert 
+            severity="error" 
+            sx={{ mb: 3 }} 
+            onClose={() => setError(null)}
+            aria-live="assertive"
+          >
             {error}
           </Alert>
         )}
@@ -537,7 +556,7 @@ const Menu: React.FC = () => {
           {categoryTabs}
         </AnimatedTabs>
 
-        <Grid container spacing={4}>
+        <Grid container spacing={4} aria-label="Lista de productos" role="region">
           {productosFiltrados.map((producto, index) => (
             <Grid item xs={12} sm={6} md={4} key={producto.id}>
               <ProductCard 

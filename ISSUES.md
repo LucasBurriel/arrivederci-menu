@@ -38,6 +38,39 @@
   - Simplificar la interfaz para dispositivos móviles
   - Realizar pruebas en diferentes dispositivos móviles
 
+#### 3. Optimización de Imagen de Fondo
+- **Estado**: Sin resolver
+- **Descripción**: La imagen de fondo (hero image) es demasiado grande y afecta los tiempos de carga
+- **Detalles**:
+  - La imagen de fondo actual es de alta resolución y pesa varios MB
+  - Esto causa que la página inicial tarde más en cargar, especialmente en conexiones lentas
+  - No hay versiones optimizadas para diferentes tamaños de pantalla
+- **Solución propuesta**:
+  1. Comprimir la imagen actual utilizando herramientas como TinyPNG o ImageOptim
+  2. Crear múltiples versiones para diferentes resoluciones
+  3. Implementar lazy loading para la imagen de fondo
+- **Próximos pasos**:
+  - Optimizar la imagen reduciendo su tamaño sin perder calidad visual
+  - Considerar el uso de formatos modernos como WebP con fallbacks
+  - Implementar srcset para servir la imagen apropiada según el dispositivo
+
+#### 4. Implementación de Favicon
+- **Estado**: Sin resolver
+- **Descripción**: La aplicación carece de un icono en la pestaña del navegador (favicon)
+- **Detalles**:
+  - Actualmente se muestra el ícono genérico de Vite
+  - No hay iconos para distintas plataformas (iOS, Android, Windows)
+  - No se ha configurado un manifest.json para PWA
+- **Solución propuesta**:
+  1. Crear un favicon basado en el logo de Arrivederci
+  2. Generar las diferentes versiones necesarias para distintos dispositivos
+  3. Configurar el HTML para incluir todas las referencias necesarias
+- **Próximos pasos**:
+  - Diseñar un favicon que represente la marca (16x16, 32x32, etc.)
+  - Generar iconos para dispositivos móviles (192x192, 512x512)
+  - Crear y configurar el manifest.json
+  - Actualizar el archivo index.html con las referencias correspondientes
+
 ## Backend/Infraestructura
 
 ### Alta Prioridad
@@ -68,4 +101,4 @@
 
 ---
 
-_Última actualización: 21 de junio de 2024_ 
+_Última actualización: 22 de junio de 2024_ 
