@@ -13,6 +13,7 @@ import {
   Alert,
   CircularProgress,
   Theme,
+  GlobalStyles,
 } from '@mui/material';
 import axios from 'axios';
 import logo from '../assets/Logo4.svg';
@@ -144,6 +145,25 @@ const LoadingContainer = styled(Box)({
   minHeight: '200px',
 });
 
+// Definición del estilo global que se aplicará para deshabilitar hovers en móvil
+const noHoverStyles = {
+  '@media (hover: none)': {
+    '& *:hover': {
+      transform: 'none !important',
+      boxShadow: 'none !important',
+      backgroundColor: 'transparent !important',
+      color: 'inherit !important',
+      transition: 'none !important',
+    },
+    '& .MuiTab-root:hover': {
+      backgroundColor: 'transparent !important',
+    },
+    '& .MuiCardContent-root:hover': {
+      backgroundColor: 'transparent !important',
+    },
+  }
+};
+
 const Menu: React.FC = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -205,6 +225,7 @@ const Menu: React.FC = () => {
   if (loading) {
     return (
       <>
+        <GlobalStyles styles={noHoverStyles} />
         <HeroSection>
           <HeroOverlay />
           <LogoImage src={logo} alt="Arrivederci Café Bar" />
@@ -220,6 +241,7 @@ const Menu: React.FC = () => {
 
   return (
     <>
+      <GlobalStyles styles={noHoverStyles} />
       <HeroSection>
         <HeroOverlay />
         <LogoImage 
