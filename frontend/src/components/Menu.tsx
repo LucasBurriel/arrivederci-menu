@@ -88,11 +88,7 @@ const AnimatedCard = styled(Card)<{ $scrollDirection: 'up' | 'down'; $index: num
     opacity: 1,
     transform: $scrollDirection === 'up'
       ? 'translateX(0)'
-      : 'translateX(-10px)',
-    '&:hover': {
-      transform: 'translateY(-5px) scale(1.02)',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-    },
+      : 'translateX(-10px)'
   })
 );
 
