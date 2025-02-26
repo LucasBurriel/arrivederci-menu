@@ -23,6 +23,8 @@ import background from '../assets/background.jpg';
 // Constantes
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const PLACEHOLDER_IMAGE = '/placeholder-food.jpg';
+// Agrego un log para depuración
+console.log('API_URL utilizada:', API_URL);
 
 // Interfaces
 interface Producto {
@@ -449,19 +451,24 @@ const Menu: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const [productosRes, categoriasRes] = await Promise.all([
-        axios.get(`${API_URL}/productos`, {
-          signal: controller.signal,
-          timeout: 10000 // Timeout de 10 segundos
-        }),
-        axios.get(`${API_URL}/categorias`, {
-          signal: controller.signal,
-          timeout: 10000
-        })
-      ]);
+      console.log('Iniciando solicitud al backend:', `${API_URL}/productos`);
+      
+      // Intento primero obtener productos para identificar el problema específico
+      const productosRes = await axios.get(`${API_URL}/productos`, {
+        signal: controller.signal,
+        timeout: 15000 // Aumentar timeout a 15 segundos
+      });
+      
+      // Si llegamos aquí, la primera solicitud funcionó, intentamos la segunda
+      const categoriasRes = await axios.get(`${API_URL}/categorias`, {
+        signal: controller.signal,
+        timeout: 15000
+      });
       
       // Verificar si se abortó mientras esperábamos
       if (controller.signal.aborted) return;
+      
+      console.log('Datos recibidos:', { productos: productosRes.data.length, categorias: categoriasRes.data.length });
       
       setProductos(productosRes.data);
       setCategorias(categoriasRes.data);
@@ -472,8 +479,32 @@ const Menu: React.FC = () => {
         return;
       }
       
+      // Log detallado del error para diagnóstico
       console.error('Error al cargar datos:', err);
-      setError('Error al cargar el menú. Por favor, intente nuevamente más tarde.');
+      if (axios.isAxiosError(err)) {
+        console.error('Detalles del error Axios:', {
+          mensaje: err.message,
+          url: err.config?.url,
+          codigo: err.code,
+          respuesta: err.response?.data,
+          estado: err.response?.status
+        });
+        
+        // Mensajes de error más específicos según el problema
+        if (err.code === 'ECONNABORTED') {
+          setError('El servidor está tardando demasiado en responder. Por favor, intente nuevamente más tarde.');
+        } else if (err.response?.status === 404) {
+          setError('No se pudo encontrar el recurso solicitado. Verifique la configuración del API.');
+        } else if (err.response?.status === 403 || err.response?.status === 401) {
+          setError('No tiene acceso a este recurso. Por favor, verifique sus credenciales.');
+        } else if (err.response && err.response.status >= 500) {
+          setError('Error en el servidor. El equipo técnico ha sido notificado.');
+        } else {
+          setError('Error al cargar el menú. Por favor, intente nuevamente más tarde.');
+        }
+      } else {
+        setError('Error al cargar el menú. Por favor, intente nuevamente más tarde.');
+      }
     } finally {
       if (!controller.signal.aborted) {
         setLoading(false);

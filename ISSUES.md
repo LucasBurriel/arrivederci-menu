@@ -71,6 +71,23 @@
   - Crear y configurar el manifest.json
   - Actualizar el archivo index.html con las referencias correspondientes
 
+#### 5. Problemas de Conexión en el Menú
+- **Estado**: Parcialmente resuelto
+- **Descripción**: El menú principal deja de funcionar intermitentemente con el error "Error al cargar el menú"
+- **Detalles**:
+  - El componente Menu.tsx no logra conectarse con el backend API en algunas situaciones
+  - Se ha mejorado el código para proporcionar más información de diagnóstico
+  - Se aumentó el timeout de 10 a 15 segundos
+  - Se añadieron mensajes de error más específicos según el tipo de problema
+- **Solución actual**:
+  1. Se implementó un mejor sistema de logs para diagnóstico
+  2. Se secuencializaron las peticiones para identificar mejor los fallos
+  3. Se agregó manejo de errores específicos por código HTTP
+- **Próximos pasos**:
+  - Monitorear la situación con los nuevos logs implementados
+  - Evaluar si es necesario un sistema de reintento automático (retry)
+  - Investigar si hay problemas de CORS o configuración en el entorno de producción
+
 ## Backend/Infraestructura
 
 ### Alta Prioridad
@@ -98,6 +115,33 @@
   2. Actualizar las variables de entorno con la nueva conexión
   3. Implementar un sistema de migraciones con datos iniciales
   4. Hacer backup de datos importantes antes de cada deploy
+
+#### 2. Implementación de Ramas de Desarrollo (Git Flow)
+- **Estado**: Sin resolver
+- **Descripción**: El proyecto necesita implementar un flujo de trabajo con ramas para evitar caídas en producción
+- **Detalles**:
+  - Actualmente se trabaja directamente sobre la rama main/master
+  - Los cambios se publican directamente en producción sin pruebas previas
+  - Se necesita un flujo de trabajo que permita desarrollo, pruebas y producción separados
+- **Impacto**:
+  - Cambios como el reciente en Menu.tsx pueden causar caídas del sistema en producción
+  - No hay forma de revertir rápidamente a una versión funcional
+  - Dificulta el trabajo colaborativo entre múltiples desarrolladores
+- **Solución propuesta**:
+  1. Implementar Git Flow con las siguientes ramas:
+     - `main`: Solo código probado y estable para producción
+     - `develop`: Código integrado para pruebas de preproducción
+     - `feature/*`: Ramas temporales para nuevas funcionalidades
+     - `hotfix/*`: Ramas temporales para correcciones urgentes
+  2. Configurar protección de ramas en GitHub:
+     - Requerir aprobación de PR antes de fusionar en main
+     - Requerir CI/CD pasando pruebas antes de permitir merge
+  3. Documentar el flujo de trabajo para todos los colaboradores
+- **Próximos pasos**:
+  1. Crear rama develop a partir de main
+  2. Configurar protecciones en GitHub
+  3. Crear documentación en README o en un archivo CONTRIBUTING.md
+  4. Implementar primeras feature branches para próximas características
 
 ## Próximas Mejoras
 
@@ -175,4 +219,4 @@
 
 ---
 
-_Última actualización: 22 de junio de 2024_ 
+_Última actualización: 23 de junio de 2024_ 
