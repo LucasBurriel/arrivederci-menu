@@ -79,6 +79,16 @@ const AnimatedTabs = styled(Box)<{ $scrollDirection: 'up' | 'down' }>(({ $scroll
   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
 }));
 
+const StaticTabs = styled(Box)({
+  borderBottom: 1,
+  borderColor: 'divider',
+  marginBottom: '32px',
+  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  padding: '8px',
+  borderRadius: '4px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+});
+
 const AnimatedCard = styled(Card)<{ $scrollDirection: 'up' | 'down'; $index: number }>(
   ({ $scrollDirection, $index }) => ({
     height: '100%',
@@ -92,6 +102,12 @@ const AnimatedCard = styled(Card)<{ $scrollDirection: 'up' | 'down'; $index: num
       : 'translateX(-10px)'
   })
 );
+
+const StaticCard = styled(Card)({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 const HeroOverlay = styled(Box)({
   position: 'absolute',
@@ -145,7 +161,7 @@ const LoadingContainer = styled(Box)({
   minHeight: '200px',
 });
 
-// Definición del estilo global que se aplicará para deshabilitar hovers en móvil
+// Estilo global para deshabilitar efectos en dispositivos móviles
 const noHoverStyles = {
   '@media (hover: none)': {
     '& *:hover': {
@@ -154,13 +170,7 @@ const noHoverStyles = {
       backgroundColor: 'transparent !important',
       color: 'inherit !important',
       transition: 'none !important',
-    },
-    '& .MuiTab-root:hover': {
-      backgroundColor: 'transparent !important',
-    },
-    '& .MuiCardContent-root:hover': {
-      backgroundColor: 'transparent !important',
-    },
+    }
   }
 };
 
@@ -173,6 +183,20 @@ const Menu: React.FC = () => {
   const [imageLoadErrors, setImageLoadErrors] = useState<Set<number>>(new Set());
   const [lastScrollY, setLastScrollY] = useState(0);
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Detectar si es un dispositivo móvil
+    const checkIfMobile = () => {
+      setIsMobile(window.matchMedia('(hover: none)').matches);
+    };
+    
+    checkIfMobile();
+    
+    // Actualizar si cambia la orientación
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -196,6 +220,9 @@ const Menu: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // No agregar el evento de scroll en dispositivos móviles
+    if (isMobile) return;
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
@@ -210,7 +237,7 @@ const Menu: React.FC = () => {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, [lastScrollY, isMobile]);
 
   const productosFiltrados = useMemo(() => {
     return categoriaActiva === 'todos'
@@ -239,6 +266,101 @@ const Menu: React.FC = () => {
     );
   }
 
+  // Renderizado para móviles (sin animaciones)
+  if (isMobile) {
+    return (
+      <>
+        <GlobalStyles styles={noHoverStyles} />
+        <HeroSection>
+          <HeroOverlay />
+          <LogoImage 
+            src={logo}
+            alt="Arrivederci Café Bar"
+          />
+        </HeroSection>
+
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          <StaticTabs>
+            <StyledTabs
+              value={categoriaActiva}
+              onChange={(_, newValue) => setCategoriaActiva(newValue)}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+            >
+              <Tab label="Todos" value="todos" />
+              {categorias.map((cat) => (
+                <Tab key={cat.valor} label={cat.nombre} value={cat.valor} />
+              ))}
+            </StyledTabs>
+          </StaticTabs>
+
+          <Grid container spacing={4}>
+            {productosFiltrados.map((producto) => (
+              <Grid item xs={12} sm={6} md={4} key={producto.id}>
+                <StaticCard>
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={imageLoadErrors.has(producto.id) ? PLACEHOLDER_IMAGE : producto.imagen_url || PLACEHOLDER_IMAGE}
+                    alt={producto.nombre}
+                    onError={() => handleImageError(producto.id)}
+                    sx={{
+                      objectFit: 'cover',
+                      backgroundColor: 'grey.100',
+                    }}
+                  />
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography gutterBottom variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+                      {producto.nombre}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        minHeight: '3em',
+                        mb: 2,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {producto.descripcion}
+                    </Typography>
+                    <Typography 
+                      variant="h6" 
+                      color="primary" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        display: 'inline-block',
+                        bgcolor: 'primary.light',
+                        color: 'primary.contrastText',
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: 1,
+                      }}
+                    >
+                      ${producto.precio.toFixed(2)}
+                    </Typography>
+                  </CardContent>
+                </StaticCard>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </>
+    );
+  }
+
+  // Renderizado para escritorio (con animaciones)
   return (
     <>
       <GlobalStyles styles={noHoverStyles} />
