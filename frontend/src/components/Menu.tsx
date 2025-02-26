@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import {
   Container,
   Grid,
@@ -14,6 +14,7 @@ import {
   CircularProgress,
   Theme,
   GlobalStyles,
+  useMediaQuery,
 } from '@mui/material';
 import axios from 'axios';
 import logo from '../assets/Logo4.svg';
@@ -174,6 +175,139 @@ const noHoverStyles = {
   }
 };
 
+// Componente para renderizar una tarjeta de producto (optimizado)
+const ProductCard: React.FC<{
+  producto: Producto;
+  index?: number;
+  scrollDirection?: 'up' | 'down';
+  isMobile: boolean;
+  onImageError: (id: number) => void;
+  imageLoadErrors: Set<number>;
+}> = React.memo(({ 
+  producto, 
+  index = 0, 
+  scrollDirection = 'up', 
+  isMobile, 
+  onImageError,
+  imageLoadErrors
+}) => {
+  const imageSrc = imageLoadErrors.has(producto.id) 
+    ? PLACEHOLDER_IMAGE 
+    : producto.imagen_url || PLACEHOLDER_IMAGE;
+
+  const handleError = useCallback(() => {
+    onImageError(producto.id);
+  }, [producto.id, onImageError]);
+
+  // Renderizado condicional basado en isMobile
+  if (isMobile) {
+    return (
+      <StaticCard>
+        <CardMedia
+          component="img"
+          height="200"
+          image={imageSrc}
+          alt={producto.nombre}
+          onError={handleError}
+          sx={{
+            objectFit: 'cover',
+            backgroundColor: 'grey.100',
+          }}
+          loading="lazy"
+        />
+        <CardContent sx={{ flexGrow: 1 }}>
+          <Typography gutterBottom variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+            {producto.nombre}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ 
+              minHeight: '3em',
+              mb: 2,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {producto.descripcion}
+          </Typography>
+          <Typography 
+            variant="h6" 
+            color="primary" 
+            sx={{ 
+              fontWeight: 'bold',
+              display: 'inline-block',
+              bgcolor: 'primary.light',
+              color: 'primary.contrastText',
+              px: 2,
+              py: 0.5,
+              borderRadius: 1,
+            }}
+          >
+            ${producto.precio.toFixed(2)}
+          </Typography>
+        </CardContent>
+      </StaticCard>
+    );
+  }
+
+  return (
+    <AnimatedCard $scrollDirection={scrollDirection} $index={index}>
+      <CardMedia
+        component="img"
+        height="200"
+        image={imageSrc}
+        alt={producto.nombre}
+        onError={handleError}
+        sx={{
+          objectFit: 'cover',
+          backgroundColor: 'grey.100',
+        }}
+        loading="lazy"
+      />
+      <CardContent sx={{ flexGrow: 1 }}>
+        <Typography gutterBottom variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+          {producto.nombre}
+        </Typography>
+        <Typography 
+          variant="body2" 
+          color="text.secondary"
+          sx={{ 
+            minHeight: '3em',
+            mb: 2,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {producto.descripcion}
+        </Typography>
+        <Typography 
+          variant="h6" 
+          color="primary" 
+          sx={{ 
+            fontWeight: 'bold',
+            display: 'inline-block',
+            bgcolor: 'primary.light',
+            color: 'primary.contrastText',
+            px: 2,
+            py: 0.5,
+            borderRadius: 1,
+          }}
+        >
+          ${producto.precio.toFixed(2)}
+        </Typography>
+      </CardContent>
+    </AnimatedCard>
+  );
+});
+
+// Componente principal
 const Menu: React.FC = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -183,72 +317,123 @@ const Menu: React.FC = () => {
   const [imageLoadErrors, setImageLoadErrors] = useState<Set<number>>(new Set());
   const [lastScrollY, setLastScrollY] = useState(0);
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    // Detectar si es un dispositivo móvil
-    const checkIfMobile = () => {
-      setIsMobile(window.matchMedia('(hover: none)').matches);
-    };
-    
-    checkIfMobile();
-    
-    // Actualizar si cambia la orientación
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
+  
+  // Verificación de capacidad hover usando useMediaQuery en lugar de evento resize
+  const isMobile = useMediaQuery('(hover: none)');
+  
+  // Evitar recreación de la función en cada renderizado
+  const handleImageError = useCallback((productoId: number) => {
+    setImageLoadErrors(prev => new Set([...prev, productoId]));
   }, []);
 
-  useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const [productosRes, categoriasRes] = await Promise.all([
-          axios.get(`${API_URL}/productos`),
-          axios.get(`${API_URL}/categorias`)
-        ]);
-        setProductos(productosRes.data);
-        setCategorias(categoriasRes.data);
-      } catch (error) {
-        console.error('Error al cargar datos:', error);
-        setError('Error al cargar el menú. Por favor, intente nuevamente más tarde.');
-      } finally {
+  // Referencia para cancelar solicitudes
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Cargar datos con mejor manejo de errores y cancelación
+  const cargarDatos = useCallback(async () => {
+    // Cancelar solicitud anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Crear nuevo controlador para esta solicitud
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [productosRes, categoriasRes] = await Promise.all([
+        axios.get(`${API_URL}/productos`, {
+          signal: controller.signal,
+          timeout: 10000 // Timeout de 10 segundos
+        }),
+        axios.get(`${API_URL}/categorias`, {
+          signal: controller.signal,
+          timeout: 10000
+        })
+      ]);
+      
+      // Verificar si se abortó mientras esperábamos
+      if (controller.signal.aborted) return;
+      
+      setProductos(productosRes.data);
+      setCategorias(categoriasRes.data);
+    } catch (err) {
+      // Verificar si se abortó
+      if (axios.isCancel(err)) {
+        console.log('Solicitud cancelada');
+        return;
+      }
+      
+      console.error('Error al cargar datos:', err);
+      setError('Error al cargar el menú. Por favor, intente nuevamente más tarde.');
+    } finally {
+      if (!controller.signal.aborted) {
         setLoading(false);
       }
-    };
-    cargarDatos();
+    }
   }, []);
 
+  // Efecto para cargar datos con limpieza adecuada
   useEffect(() => {
-    // No agregar el evento de scroll en dispositivos móviles
-    if (isMobile) return;
-
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      if (currentScrollY > lastScrollY) {
-        setScrollDirection('down');
-      } else {
-        setScrollDirection('up');
+    cargarDatos();
+    
+    return () => {
+      // Cancelar solicitud al desmontar
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
+    };
+  }, [cargarDatos]);
+
+  // Optimizar manejo de scroll con throttling
+  useEffect(() => {
+    if (isMobile) return; // No agregar eventos en móviles
+    
+    let ticking = false;
+    let lastKnownScrollY = window.scrollY;
+    
+    const handleScroll = () => {
+      lastKnownScrollY = window.scrollY;
       
-      setLastScrollY(currentScrollY);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (lastKnownScrollY > lastScrollY) {
+            setScrollDirection('down');
+          } else {
+            setScrollDirection('up');
+          }
+          
+          setLastScrollY(lastKnownScrollY);
+          ticking = false;
+        });
+        
+        ticking = true;
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, isMobile]);
 
+  // Optimizar filtrado de productos
   const productosFiltrados = useMemo(() => {
     return categoriaActiva === 'todos'
       ? productos.filter(p => p.disponible)
       : productos.filter(p => p.categoria === categoriaActiva && p.disponible);
   }, [productos, categoriaActiva]);
+  
+  // Manejar cambio de categoría
+  const handleCategoriaChange = useCallback((
+    _: React.SyntheticEvent, 
+    newValue: string
+  ) => {
+    setCategoriaActiva(newValue);
+  }, []);
 
-  const handleImageError = (productoId: number) => {
-    setImageLoadErrors(prev => new Set([...prev, productoId]));
-  };
-
+  // Renderizado condicional para estado de carga
   if (loading) {
     return (
       <>
@@ -265,6 +450,22 @@ const Menu: React.FC = () => {
       </>
     );
   }
+
+  // Renderizado común para ambas versiones
+  const categoryTabs = (
+    <StyledTabs
+      value={categoriaActiva}
+      onChange={handleCategoriaChange}
+      variant="scrollable"
+      scrollButtons="auto"
+      allowScrollButtonsMobile
+    >
+      <Tab label="Todos" value="todos" />
+      {categorias.map((cat) => (
+        <Tab key={cat.valor} label={cat.nombre} value={cat.valor} />
+      ))}
+    </StyledTabs>
+  );
 
   // Renderizado para móviles (sin animaciones)
   if (isMobile) {
@@ -287,71 +488,18 @@ const Menu: React.FC = () => {
           )}
 
           <StaticTabs>
-            <StyledTabs
-              value={categoriaActiva}
-              onChange={(_, newValue) => setCategoriaActiva(newValue)}
-              variant="scrollable"
-              scrollButtons="auto"
-              allowScrollButtonsMobile
-            >
-              <Tab label="Todos" value="todos" />
-              {categorias.map((cat) => (
-                <Tab key={cat.valor} label={cat.nombre} value={cat.valor} />
-              ))}
-            </StyledTabs>
+            {categoryTabs}
           </StaticTabs>
 
           <Grid container spacing={4}>
             {productosFiltrados.map((producto) => (
               <Grid item xs={12} sm={6} md={4} key={producto.id}>
-                <StaticCard>
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={imageLoadErrors.has(producto.id) ? PLACEHOLDER_IMAGE : producto.imagen_url || PLACEHOLDER_IMAGE}
-                    alt={producto.nombre}
-                    onError={() => handleImageError(producto.id)}
-                    sx={{
-                      objectFit: 'cover',
-                      backgroundColor: 'grey.100',
-                    }}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography gutterBottom variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-                      {producto.nombre}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary"
-                      sx={{ 
-                        minHeight: '3em',
-                        mb: 2,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {producto.descripcion}
-                    </Typography>
-                    <Typography 
-                      variant="h6" 
-                      color="primary" 
-                      sx={{ 
-                        fontWeight: 'bold',
-                        display: 'inline-block',
-                        bgcolor: 'primary.light',
-                        color: 'primary.contrastText',
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 1,
-                      }}
-                    >
-                      ${producto.precio.toFixed(2)}
-                    </Typography>
-                  </CardContent>
-                </StaticCard>
+                <ProductCard 
+                  producto={producto}
+                  isMobile={true}
+                  onImageError={handleImageError}
+                  imageLoadErrors={imageLoadErrors}
+                />
               </Grid>
             ))}
           </Grid>
@@ -386,71 +534,20 @@ const Menu: React.FC = () => {
         )}
 
         <AnimatedTabs $scrollDirection={scrollDirection}>
-          <StyledTabs
-            value={categoriaActiva}
-            onChange={(_, newValue) => setCategoriaActiva(newValue)}
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-          >
-            <Tab label="Todos" value="todos" />
-            {categorias.map((cat) => (
-              <Tab key={cat.valor} label={cat.nombre} value={cat.valor} />
-            ))}
-          </StyledTabs>
+          {categoryTabs}
         </AnimatedTabs>
 
         <Grid container spacing={4}>
           {productosFiltrados.map((producto, index) => (
             <Grid item xs={12} sm={6} md={4} key={producto.id}>
-              <AnimatedCard $scrollDirection={scrollDirection} $index={index}>
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={imageLoadErrors.has(producto.id) ? PLACEHOLDER_IMAGE : producto.imagen_url || PLACEHOLDER_IMAGE}
-                  alt={producto.nombre}
-                  onError={() => handleImageError(producto.id)}
-                  sx={{
-                    objectFit: 'cover',
-                    backgroundColor: 'grey.100',
-                  }}
-                />
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography gutterBottom variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-                    {producto.nombre}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ 
-                      minHeight: '3em',
-                      mb: 2,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {producto.descripcion}
-                  </Typography>
-                  <Typography 
-                    variant="h6" 
-                    color="primary" 
-                    sx={{ 
-                      fontWeight: 'bold',
-                      display: 'inline-block',
-                      bgcolor: 'primary.light',
-                      color: 'primary.contrastText',
-                      px: 2,
-                      py: 0.5,
-                      borderRadius: 1,
-                    }}
-                  >
-                    ${producto.precio.toFixed(2)}
-                  </Typography>
-                </CardContent>
-              </AnimatedCard>
+              <ProductCard 
+                producto={producto}
+                index={index}
+                scrollDirection={scrollDirection}
+                isMobile={false}
+                onImageError={handleImageError}
+                imageLoadErrors={imageLoadErrors}
+              />
             </Grid>
           ))}
         </Grid>
