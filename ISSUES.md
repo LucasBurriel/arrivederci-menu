@@ -99,6 +99,80 @@
   3. Implementar un sistema de migraciones con datos iniciales
   4. Hacer backup de datos importantes antes de cada deploy
 
+## Próximas Mejoras
+
+### Funcionalidades
+
+#### 1. Soporte Multilenguaje
+- **Prioridad**: Media
+- **Descripción**: Implementar soporte para múltiples idiomas (español e inglés)
+- **Alcance**:
+  - Implementar sistema de i18n con react-i18next
+  - Crear archivos de traducción para español e inglés
+  - Agregar selector de idioma en la interfaz
+  - Aplicar traducciones a todos los textos estáticos
+
+#### 2. Sistema de Comentarios y Valoraciones
+- **Prioridad**: Baja
+- **Descripción**: Permitir a los clientes dejar comentarios y valoraciones sobre productos
+- **Alcance**:
+  - Crear esquema de base de datos para comentarios
+  - Implementar API para gestión de comentarios
+  - Agregar interfaz de usuario para visualizar y añadir comentarios
+  - Implementar sistema de moderación en el panel de administración
+
+### Técnicas
+
+#### 1. Implementación de Tests Automatizados
+- **Prioridad**: Alta
+- **Descripción**: Añadir suite de pruebas para frontend y backend
+- **Alcance**:
+  - Configurar Jest y React Testing Library para frontend
+  - Configurar Pytest para backend
+  - Implementar pruebas unitarias para componentes clave
+  - Implementar pruebas de integración para flujos críticos
+  - Configurar CI/CD para ejecutar pruebas automáticamente
+
+#### 2. PWA (Progressive Web App)
+- **Prioridad**: Media
+- **Descripción**: Convertir la aplicación en una PWA para mejor experiencia móvil
+- **Alcance**:
+  - Implementar service worker
+  - Configurar manifest.json
+  - Implementar estrategias de caché
+  - Permitir instalación en dispositivos
+  - Habilitar funcionalidad offline básica
+
+#### 3. Optimización de SEO
+- **Prioridad**: Media
+- **Descripción**: Mejorar el posicionamiento en motores de búsqueda
+- **Alcance**:
+  - Implementar meta tags dinámicos
+  - Generar sitemap.xml
+  - Optimizar estructura HTML semántica
+  - Mejorar velocidad de carga (Core Web Vitals)
+  - Asegurar accesibilidad WCAG nivel AA
+
+### UX/UI
+
+#### 1. Modo Oscuro
+- **Prioridad**: Baja
+- **Descripción**: Implementar un tema oscuro para la aplicación
+- **Alcance**:
+  - Definir paleta de colores para modo oscuro
+  - Implementar cambio de tema utilizando MUI Theme Provider
+  - Agregar botón de cambio de tema
+  - Guardar preferencia de tema en localStorage
+
+#### 2. Mejoras en Panel de Administración
+- **Prioridad**: Media
+- **Descripción**: Mejorar la experiencia del panel administrativo
+- **Alcance**:
+  - Implementar vista de dashboard con estadísticas
+  - Mejorar sistema de gestión de productos con vista previa
+  - Implementar sistema de arrastrar y soltar para ordenar productos
+  - Añadir gráficos para visualizar datos de ventas/visitas
+
 ---
 
 _Última actualización: 22 de junio de 2024_ 

@@ -194,27 +194,95 @@ const ProductCard: React.FC<{
   const imageSrc = imageLoadErrors.has(producto.id) 
     ? PLACEHOLDER_IMAGE 
     : producto.imagen_url || PLACEHOLDER_IMAGE;
+  
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   const handleError = useCallback(() => {
     onImageError(producto.id);
   }, [producto.id, onImageError]);
+  
+  const handleImageLoaded = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+
+  // Usar Intersection Observer para cargar imágenes solo cuando sean visibles
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsVisible(true);
+          // Desconectar después de detectar
+          observer.disconnect();
+        }
+      },
+      { 
+        rootMargin: '200px', // Cargar un poco antes de que sea visible
+        threshold: 0.01 
+      }
+    );
+    
+    if (imageRef.current) {
+      observer.observe(imageRef.current);
+    }
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Renderizado condicional basado en isMobile
   if (isMobile) {
     return (
       <StaticCard>
-        <CardMedia
-          component="img"
-          height="200"
-          image={imageSrc}
-          alt={producto.nombre}
-          onError={handleError}
+        <Box
+          ref={imageRef}
           sx={{
-            objectFit: 'cover',
+            height: '200px',
             backgroundColor: 'grey.100',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'relative',
           }}
-          loading="lazy"
-        />
+        >
+          {/* Placeholder mientras la imagen carga */}
+          {(!isVisible || !imageLoaded) && (
+            <Box 
+              sx={{ 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '50%',
+                background: 'rgba(0,0,0,0.1)',
+                position: 'absolute',
+              }} 
+            />
+          )}
+          
+          {/* Imagen real, cargada solo cuando está en viewport */}
+          {isVisible && (
+            <CardMedia
+              component="img"
+              height="200"
+              image={imageSrc}
+              alt={producto.nombre}
+              onError={handleError}
+              onLoad={handleImageLoaded}
+              sx={{
+                objectFit: 'cover',
+                opacity: imageLoaded ? 1 : 0,
+                transition: 'opacity 0.3s ease-in-out',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+              }}
+            />
+          )}
+        </Box>
+        
         <CardContent sx={{ flexGrow: 1 }}>
           <Typography gutterBottom variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
             {producto.nombre}
@@ -246,6 +314,7 @@ const ProductCard: React.FC<{
               py: 0.5,
               borderRadius: 1,
             }}
+            aria-label={`Precio: ${producto.precio.toFixed(2)} euros`}
           >
             ${producto.precio.toFixed(2)}
           </Typography>
@@ -256,18 +325,53 @@ const ProductCard: React.FC<{
 
   return (
     <AnimatedCard $scrollDirection={scrollDirection} $index={index}>
-      <CardMedia
-        component="img"
-        height="200"
-        image={imageSrc}
-        alt={producto.nombre}
-        onError={handleError}
+      <Box
+        ref={imageRef}
         sx={{
-          objectFit: 'cover',
+          height: '200px',
           backgroundColor: 'grey.100',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
         }}
-        loading="lazy"
-      />
+      >
+        {/* Placeholder mientras la imagen carga */}
+        {(!isVisible || !imageLoaded) && (
+          <Box
+            sx={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'rgba(0,0,0,0.1)',
+              position: 'absolute',
+            }}
+          />
+        )}
+        
+        {/* Imagen real, cargada solo cuando está en viewport */}
+        {isVisible && (
+          <CardMedia
+            component="img"
+            height="200"
+            image={imageSrc}
+            alt={producto.nombre}
+            onError={handleError}
+            onLoad={handleImageLoaded}
+            sx={{
+              objectFit: 'cover',
+              opacity: imageLoaded ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        )}
+      </Box>
+      
       <CardContent sx={{ flexGrow: 1 }}>
         <Typography gutterBottom variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
           {producto.nombre}
