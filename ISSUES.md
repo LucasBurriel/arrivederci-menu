@@ -72,29 +72,24 @@
   - Actualizar el archivo index.html con las referencias correspondientes
 
 #### 5. Problemas de Conexión en el Menú
-- **Estado**: Necesita atención urgente
+- **Estado**: Identificado - En proceso de solución
 - **Descripción**: El menú principal falla con error 500 del servidor
 - **Detalles**:
   - El componente Menu.tsx se conecta correctamente al backend pero recibe error 500
-  - Los logs muestran: "GET https://arrivederci-menu-production.up.railway.app/api/productos 500"
-  - El error se muestra correctamente al usuario como: "Error en el servidor. El equipo técnico ha sido notificado."
-  - Esta es una falla crítica que impide el funcionamiento de la aplicación en producción
-- **Diagnóstico**:
-  - Se ha confirmado que es un error del lado del servidor (no del frontend)
-  - Posibles causas:
-    1. Problemas con la conexión a PostgreSQL en Railway
-    2. Error en el código del backend al procesar la solicitud
-    3. Falta de recursos en el servidor
-    4. Posiblemente relacionado con el issue #1 (Persistencia de Datos en Railway)
+  - Los logs muestran: `ERROR - Error al obtener productos: (psycopg2.errors.UndefinedColumn) column producto.fecha_creacion does not exist`
+  - El error se debe a una discrepancia entre el modelo Producto en el código y la estructura de la tabla en la base de datos
+  - El API intenta seleccionar columnas `fecha_creacion` y `fecha_actualizacion` que no existen en la tabla de la base de datos
+- **Soluciones implementadas**:
+  1. Se ha creado un script `actualizar_schema.py` para añadir las columnas faltantes a la base de datos
+  2. Se ha creado un archivo `app_compatible.py` como versión alternativa que no depende de las columnas faltantes
 - **Acciones inmediatas**:
-  1. Revisar los logs del servidor en Railway para encontrar detalles específicos del error
-  2. Verificar el estado de la base de datos en Railway
-  3. Intentar reiniciar el servicio en Railway
-  4. Examinar si hubo cambios recientes en el código del backend
+  1. Ejecutar el script `actualizar_schema.py` en el servidor para añadir las columnas
+  2. O desplegar la versión compatible del backend que no requiere las columnas
+  3. Reiniciar el servicio en Railway después de aplicar los cambios
 - **Acciones a largo plazo**:
-  - Implementar mejor monitoreo y alertas para problemas de backend
-  - Añadir endpoint de health check para verificar estado del servidor y la base de datos
-  - Considerar desplegar en un entorno de staging separado
+  - Implementar migraciones automáticas de base de datos con Alembic
+  - Mejorar el sistema de detección de discrepancias entre modelos y esquema de base de datos
+  - Asegurar que los cambios en el modelo siempre vayan acompañados de migraciones
 
 ## Backend/Infraestructura
 
@@ -150,6 +145,28 @@
   2. Configurar protecciones en GitHub
   3. Crear documentación en README o en un archivo CONTRIBUTING.md
   4. Implementar primeras feature branches para próximas características
+
+#### 3. Implementación de Migraciones de Base de Datos
+- **Estado**: Sin resolver
+- **Descripción**: Se necesita un sistema de migraciones para gestionar cambios en la estructura de la base de datos
+- **Detalles**:
+  - El error actual del menú se debe a la falta de un sistema de migraciones
+  - Los cambios en el modelo (como añadir columnas `fecha_creacion` y `fecha_actualizacion`) no se aplican automáticamente
+  - Esto causa discrepancias entre el código y la base de datos que provocan errores 500
+- **Impacto**:
+  - Fallos en producción cuando se modifica la estructura del modelo sin actualizar la base de datos
+  - Dificultad para manejar cambios en esquemas de base de datos entre entornos
+  - Pérdida de tiempo en solucionar problemas que podrían evitarse
+- **Solución propuesta**:
+  1. Implementar Alembic para gestionar migraciones SQL
+  2. Crear script para detectar cambios en modelos automáticamente
+  3. Integrar migraciones en el proceso de despliegue
+  4. Documentar el proceso para el equipo
+- **Próximos pasos**:
+  1. Instalar y configurar Alembic
+  2. Crear primera migración con el esquema actual
+  3. Documentar cómo crear y aplicar migraciones
+  4. Integrar con CI/CD
 
 ## Próximas Mejoras
 
