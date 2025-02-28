@@ -4,7 +4,7 @@ from flask_cors import CORS
 from typing import List, Dict, Any, Optional
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
-from datetime import timedelta, datetime
+from datetime import timedelta
 from functools import wraps
 import os
 from dotenv import load_dotenv
@@ -60,12 +60,6 @@ def after_request(response):
             response.status_code = 204
             return response
     
-    # Agregar headers de seguridad
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    
     logger.info(f"Headers de respuesta CORS: {dict(response.headers)}")
     return response
 
@@ -118,8 +112,6 @@ class Producto(db.Model):
     categoria = db.Column(db.String(50), db.ForeignKey('categoria.valor'), nullable=False)
     disponible = db.Column(db.Boolean, default=True)
     imagen_url = db.Column(db.String(200))
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -140,43 +132,11 @@ def requiere_auth(f):
             if 'user_id' not in session:
                 logger.warning(f"Intento de acceso no autorizado a {request.path}")
                 return jsonify({'error': 'No autorizado'}), 401
-            
-            # Verificar que el usuario exista
-            usuario = Usuario.query.get(session['user_id'])
-            if not usuario:
-                logger.warning(f"Usuario con ID {session['user_id']} no encontrado")
-                session.clear()
-                return jsonify({'error': 'Sesión inválida'}), 401
-                
             return f(*args, **kwargs)
         except Exception as e:
             logger.error(f"Error en middleware de autenticación: {str(e)}")
             return jsonify({'error': 'Error interno del servidor'}), 500
     return decorated
-
-# Funciones de utilidad
-def validar_datos_producto(datos: Dict) -> Optional[str]:
-    """Valida los datos de un producto"""
-    if not datos:
-        return "No se proporcionaron datos"
-        
-    campos_requeridos = ['nombre', 'descripcion', 'precio', 'categoria']
-    campos_faltantes = [campo for campo in campos_requeridos if campo not in datos or not datos[campo]]
-    
-    if campos_faltantes:
-        return f"Faltan campos requeridos: {', '.join(campos_faltantes)}"
-        
-    # Validar formato y rango de valores
-    if 'precio' in datos and (not isinstance(datos['precio'], (int, float)) or datos['precio'] <= 0):
-        return "El precio debe ser un número positivo"
-        
-    # Validar que la categoría exista
-    if 'categoria' in datos:
-        categoria = Categoria.query.filter_by(valor=datos['categoria']).first()
-        if not categoria:
-            return "La categoría seleccionada no existe"
-            
-    return None
 
 # Manejador de errores global
 @app.errorhandler(Exception)
@@ -184,127 +144,30 @@ def handle_error(e):
     logger.error(f"Error no manejado: {str(e)}")
     return jsonify({'error': 'Error interno del servidor'}), 500
 
-# Health check endpoint
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    """
-    Endpoint para verificar el estado del servicio.
-    Comprueba:
-     - API funcionando
-     - Conexión a la base de datos
-     - Estado del sistema
-    """
-    try:
-        # Check sistema básico
-        status = {
-            'status': 'UP',
-            'timestamp': datetime.utcnow().isoformat(),
-            'version': '1.0.0',
-            'checks': {}
-        }
-        
-        # Check base de datos
-        try:
-            # Verificar conexión a la base de datos
-            start_time = datetime.utcnow()
-            result = db.session.execute(text('SELECT 1')).fetchone()
-            end_time = datetime.utcnow()
-            response_time = (end_time - start_time).total_seconds() * 1000  # ms
-            
-            # Contar registros en tablas principales para verificar datos
-            producto_count = Producto.query.count()
-            categoria_count = Categoria.query.count()
-            
-            status['checks']['database'] = {
-                'status': 'UP',
-                'responseTime': f"{response_time:.2f}ms",
-                'message': 'Conexión exitosa',
-                'details': {
-                    'productos': producto_count,
-                    'categorias': categoria_count
-                }
-            }
-        except Exception as e:
-            logger.error(f"Error en health check de base de datos: {str(e)}")
-            status['status'] = 'DOWN'
-            status['checks']['database'] = {
-                'status': 'DOWN',
-                'message': f"Error: {str(e)}"
-            }
-        
-        # Check espacio en disco y memoria si es posible
-        try:
-            import psutil
-            disk = psutil.disk_usage('/')
-            memory = psutil.virtual_memory()
-            
-            status['checks']['resources'] = {
-                'status': 'UP',
-                'disk': {
-                    'total': f"{disk.total / (1024**3):.1f}GB",
-                    'free': f"{disk.free / (1024**3):.1f}GB",
-                    'percent': f"{disk.percent}%"
-                },
-                'memory': {
-                    'total': f"{memory.total / (1024**2):.1f}MB",
-                    'available': f"{memory.available / (1024**2):.1f}MB",
-                    'percent': f"{memory.percent}%"
-                }
-            }
-            
-            # Advertencias si hay recursos bajos
-            if disk.percent > 90 or memory.percent > 85:
-                status['checks']['resources']['warnings'] = []
-                if disk.percent > 90:
-                    status['checks']['resources']['warnings'].append('Espacio en disco bajo')
-                if memory.percent > 85:
-                    status['checks']['resources']['warnings'].append('Memoria disponible baja')
-        except ImportError:
-            # psutil puede no estar disponible en todos los entornos
-            pass
-        except Exception as e:
-            logger.warning(f"No se pudo obtener información de recursos: {str(e)}")
-        
-        # Determinar código HTTP basado en estado general
-        http_code = 200 if status['status'] == 'UP' else 503
-        return jsonify(status), http_code
-    except Exception as e:
-        logger.error(f"Error general en health check: {str(e)}")
-        return jsonify({
-            'status': 'DOWN',
-            'timestamp': datetime.utcnow().isoformat(),
-            'message': f"Error: {str(e)}"
-        }), 500
-
 # Rutas de autenticación mejoradas
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     try:
         logger.info("Intento de login recibido")
         datos = request.json
+        logger.info(f"Datos recibidos: {datos}")
         
         if not datos or 'username' not in datos or 'password' not in datos:
             logger.warning("Datos de login incompletos")
             return jsonify({'error': 'Datos de login incompletos'}), 400
 
-        # Prevenir ataques de fuerza bruta limitando la información revelada
         usuario = Usuario.query.filter_by(username=datos['username']).first()
         if usuario and usuario.check_password(datos['password']):
             session.permanent = True
             session['user_id'] = usuario.id
-            
-            # Actualizar último acceso
-            usuario.ultimo_acceso = datetime.utcnow()
-            db.session.commit()
-            
             logger.info(f"Login exitoso para usuario: {datos['username']}")
             return jsonify({'mensaje': 'Login exitoso'})
 
-        logger.warning(f"Intento de login fallido")
+        logger.warning(f"Intento de login fallido para usuario: {datos.get('username')}")
         return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
     except Exception as e:
         logger.error(f"Error en login: {str(e)}")
-        return jsonify({'error': 'Error interno del servidor'}), 500
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
@@ -324,69 +187,34 @@ def check_auth():
 # Rutas de Categorías
 @app.route('/api/categorias', methods=['GET'])
 def obtener_categorias():
-    try:
-        categorias = Categoria.query.all()
-        return jsonify([c.to_dict() for c in categorias])
-    except Exception as e:
-        logger.error(f"Error al obtener categorías: {str(e)}")
-        return jsonify({'error': 'Error al obtener categorías'}), 500
+    categorias = Categoria.query.all()
+    return jsonify([c.to_dict() for c in categorias])
 
 @app.route('/api/categorias', methods=['POST'])
 @requiere_auth
 def crear_categoria():
+    datos = request.json
+    nueva_categoria = Categoria(
+        nombre=datos['nombre'],
+        valor=datos['valor'].lower().replace(' ', '_')
+    )
     try:
-        datos = request.json
-        
-        # Validar datos
-        if not datos or 'nombre' not in datos or not datos['nombre'].strip():
-            return jsonify({'error': 'El nombre de la categoría es requerido'}), 400
-            
-        # Generar valor si no se proporciona
-        if 'valor' not in datos or not datos['valor'].strip():
-            valor = datos['nombre'].lower().strip()
-            # Eliminar caracteres especiales y acentos
-            import re
-            import unicodedata
-            valor = unicodedata.normalize('NFKD', valor).encode('ASCII', 'ignore').decode('ASCII')
-            valor = re.sub(r'[^\w\s]', '', valor)
-            valor = re.sub(r'\s+', '_', valor)
-        else:
-            valor = datos['valor'].lower().strip()
-            
-        # Verificar si ya existe
-        if Categoria.query.filter((Categoria.nombre == datos['nombre']) | (Categoria.valor == valor)).first():
-            return jsonify({'error': 'Ya existe una categoría con ese nombre o valor'}), 400
-        
-        nueva_categoria = Categoria(
-            nombre=datos['nombre'],
-            valor=valor
-        )
-        
         db.session.add(nueva_categoria)
         db.session.commit()
-        return jsonify({'mensaje': 'Categoría creada exitosamente', 'categoria': nueva_categoria.to_dict()}), 201
-    except Exception as e:
+        return jsonify({'mensaje': 'Categoría creada exitosamente'}), 201
+    except Exception:
         db.session.rollback()
-        logger.error(f"Error al crear categoría: {str(e)}")
-        return jsonify({'error': 'Error al crear la categoría'}), 500
+        return jsonify({'error': 'La categoría ya existe'}), 400
 
 @app.route('/api/categorias/<int:id>', methods=['DELETE'])
 @requiere_auth
 def eliminar_categoria(id: int):
-    try:
-        categoria = Categoria.query.get_or_404(id)
-        
-        # Verificar si la categoría tiene productos
-        if Producto.query.filter_by(categoria=categoria.valor).first():
-            return jsonify({'error': 'No se puede eliminar una categoría con productos'}), 400
-            
-        db.session.delete(categoria)
-        db.session.commit()
-        return jsonify({'mensaje': 'Categoría eliminada exitosamente'})
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error al eliminar categoría {id}: {str(e)}")
-        return jsonify({'error': 'Error al eliminar la categoría'}), 500
+    categoria = Categoria.query.get_or_404(id)
+    if Producto.query.filter_by(categoria=categoria.valor).first():
+        return jsonify({'error': 'No se puede eliminar una categoría con productos'}), 400
+    db.session.delete(categoria)
+    db.session.commit()
+    return jsonify({'mensaje': 'Categoría eliminada exitosamente'})
 
 # Rutas de Productos
 @app.route('/api/productos', methods=['GET'])
@@ -406,11 +234,21 @@ def obtener_productos():
 def crear_producto():
     try:
         datos = request.json
+        # Validar que todos los campos requeridos estén presentes
+        campos_requeridos = ['nombre', 'descripcion', 'precio', 'categoria']
+        campos_faltantes = [campo for campo in campos_requeridos if campo not in datos or not datos[campo]]
         
-        # Validar datos
-        error = validar_datos_producto(datos)
-        if error:
-            return jsonify({'error': error}), 400
+        if campos_faltantes:
+            return jsonify({
+                'error': f'Faltan campos requeridos: {", ".join(campos_faltantes)}'
+            }), 400
+
+        # Validar que la categoría existe
+        categoria = Categoria.query.filter_by(valor=datos['categoria']).first()
+        if not categoria:
+            return jsonify({
+                'error': 'La categoría seleccionada no existe'
+            }), 400
 
         nuevo_producto = Producto(
             nombre=datos['nombre'],
@@ -422,7 +260,7 @@ def crear_producto():
         )
         db.session.add(nuevo_producto)
         db.session.commit()
-        return jsonify({'mensaje': 'Producto creado exitosamente', 'producto': nuevo_producto.to_dict()}), 201
+        return jsonify({'mensaje': 'Producto creado exitosamente'}), 201
     except Exception as e:
         logger.error(f"Error al crear producto: {str(e)}")
         db.session.rollback()
@@ -431,38 +269,21 @@ def crear_producto():
 @app.route('/api/productos/<int:id>', methods=['PUT'])
 @requiere_auth
 def actualizar_producto(id: int):
-    try:
-        producto = Producto.query.get_or_404(id)
-        datos = request.json
-        
-        # Validar datos
-        error = validar_datos_producto(datos)
-        if error:
-            return jsonify({'error': error}), 400
-            
-        for campo in ['nombre', 'descripcion', 'precio', 'categoria', 'disponible', 'imagen_url']:
-            if campo in datos:
-                setattr(producto, campo, datos[campo])
-                
-        db.session.commit()
-        return jsonify({'mensaje': 'Producto actualizado exitosamente', 'producto': producto.to_dict()})
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error al actualizar producto {id}: {str(e)}")
-        return jsonify({'error': 'Error al actualizar el producto'}), 500
+    producto = Producto.query.get_or_404(id)
+    datos = request.json
+    for campo in ['nombre', 'descripcion', 'precio', 'categoria', 'disponible', 'imagen_url']:
+        if campo in datos:
+            setattr(producto, campo, datos[campo])
+    db.session.commit()
+    return jsonify({'mensaje': 'Producto actualizado exitosamente'})
 
 @app.route('/api/productos/<int:id>', methods=['DELETE'])
 @requiere_auth
 def eliminar_producto(id: int):
-    try:
-        producto = Producto.query.get_or_404(id)
-        db.session.delete(producto)
-        db.session.commit()
-        return jsonify({'mensaje': 'Producto eliminado exitosamente'})
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error al eliminar producto {id}: {str(e)}")
-        return jsonify({'error': 'Error al eliminar el producto'}), 500
+    producto = Producto.query.get_or_404(id)
+    db.session.delete(producto)
+    db.session.commit()
+    return jsonify({'mensaje': 'Producto eliminado exitosamente'})
 
 # Después de crear las tablas
 with app.app_context():
@@ -481,12 +302,4 @@ with app.app_context():
         raise
 
 if __name__ == '__main__':
-    # En producción, desactivar el modo debug
-    debug_mode = os.environ.get('FLASK_ENV') == 'development'
-    
-    # Si no estamos en modo debug, configurar para producción
-    if not debug_mode:
-        app.config['DEBUG'] = False
-        app.config['TESTING'] = False
-        
-    app.run(debug=debug_mode) 
+    app.run(debug=True) 
