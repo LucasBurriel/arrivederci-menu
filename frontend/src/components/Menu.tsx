@@ -55,46 +55,30 @@ const HeroSection = styled(Box)(({ theme }: { theme: Theme }) => ({
   overflow: 'hidden',
 }));
 
-const AnimatedContainer = styled(Container)<{ $scrollDirection: 'up' | 'down' }>(({ $scrollDirection }) => ({
+const AnimatedContainer = styled(Container)(() => ({
   transition: 'all 0.5s ease-out',
   opacity: 1,
-  transform: $scrollDirection === 'up' 
-    ? 'translateY(0)' 
-    : 'translateY(10px)',
 }));
 
-const AnimatedTabs = styled(Box)<{ $scrollDirection: 'up' | 'down' }>(({ $scrollDirection }) => ({
+const AnimatedTabs = styled(Box)(() => ({
   borderBottom: 1,
   borderColor: 'divider',
   marginBottom: '32px',
   transition: 'all 0.5s ease-out',
   opacity: 1,
-  transform: $scrollDirection === 'up' 
-    ? 'translateX(0)' 
-    : 'translateX(-10px)',
   backgroundColor: 'rgba(255, 255, 255, 0.9)',
   padding: '8px',
   borderRadius: '4px',
   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
 }));
 
-const AnimatedCard = styled(Card)<{ $scrollDirection: 'up' | 'down'; $index: number }>(
-  ({ $scrollDirection, $index }) => ({
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'all 0.5s ease-out',
-    transitionDelay: `${$index * 0.1}s`,
-    opacity: 1,
-    transform: $scrollDirection === 'up'
-      ? 'translateX(0)'
-      : 'translateX(-10px)',
-    '&:hover': {
-      transform: 'translateY(-5px) scale(1.02)',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-    },
-  })
-);
+const AnimatedCard = styled(Card)(() => ({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  transition: 'all 0.5s ease-out',
+  opacity: 1,
+}));
 
 const HeroOverlay = styled(Box)({
   position: 'absolute',
@@ -238,14 +222,14 @@ const Menu: React.FC = () => {
         />
       </HeroSection>
 
-      <AnimatedContainer maxWidth="lg" sx={{ py: 4 }} $scrollDirection={scrollDirection}>
+      <AnimatedContainer maxWidth="lg" sx={{ py: 4 }}>
         {error && (
           <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
             {error}
           </Alert>
         )}
 
-        <AnimatedTabs $scrollDirection={scrollDirection}>
+        <AnimatedTabs>
           <StyledTabs
             value={categoriaActiva}
             onChange={(_, newValue) => setCategoriaActiva(newValue)}
@@ -261,9 +245,9 @@ const Menu: React.FC = () => {
         </AnimatedTabs>
 
         <Grid container spacing={4}>
-          {productosFiltrados.map((producto, index) => (
+          {productosFiltrados.map((producto) => (
             <Grid item xs={12} sm={6} md={4} key={producto.id}>
-              <AnimatedCard $scrollDirection={scrollDirection} $index={index}>
+              <AnimatedCard>
                 <CardMedia
                   component="img"
                   height="200"
