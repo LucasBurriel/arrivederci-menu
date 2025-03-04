@@ -245,7 +245,7 @@ const Menu: React.FC = () => {
         </AnimatedTabs>
 
         <Grid container spacing={4}>
-          {productosFiltrados.map((producto, index) => (
+          {productosFiltrados.map((producto) => (
             <Grid item xs={12} sm={6} md={4} key={producto.id}>
               <AnimatedCard>
                 <CardMedia
