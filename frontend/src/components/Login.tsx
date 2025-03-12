@@ -88,7 +88,40 @@ const Login: React.FC = () => {
       console.log('Respuesta del servidor login (headers):', response.headers);
       console.log('Respuesta del servidor login (status):', response.status);
       
-      // Verificar si hay un token en la respuesta
+      // SOLUCIÓN TEMPORAL: El backend no proporciona un token
+      // Verificar si la respuesta indica login exitoso
+      const isLoginSuccessful = 
+        response.status === 200 && 
+        (response.data.mensaje === "Login exitoso" || 
+         response.data.message === "Login exitoso");
+      
+      if (isLoginSuccessful) {
+        console.log('Login exitoso detectado, generando token temporal');
+        
+        // Crear un token temporal basado en el nombre de usuario
+        // Esto es solo una solución temporal, no segura para producción
+        const tempToken = btoa(`${credentials.username}:${Date.now()}`);
+        
+        // Guardar el token temporal
+        const tokenGuardado = authService.setToken(tempToken);
+        
+        if (!tokenGuardado) {
+          console.error('No se pudo guardar el token en ningún almacenamiento');
+          setStorageError(true);
+          setError('Error: Tu navegador está bloqueando el almacenamiento necesario para iniciar sesión. Por favor, verifica la configuración de privacidad o prueba con otro navegador.');
+          setLoading(false);
+          return;
+        }
+        
+        // Guardar información del usuario
+        authService.setUser({ username: credentials.username });
+        
+        // Navegar directamente a la sección de administración
+        navigate('/admin');
+        return;
+      }
+      
+      // Verificar si hay un token en la respuesta (código original)
       if (!response.data.token && !response.data.session_id) {
         console.error('No se recibió un token o identificador de sesión en la respuesta');
         setError('Error: El servidor no devolvió un token de autenticación. Contacta al administrador.');

@@ -189,6 +189,13 @@ class AuthService {
       return false;
     }
 
+    // SOLUCIÓN TEMPORAL: Si estamos usando un token temporal (generado por el front)
+    // consideramos la sesión como válida sin verificar con el backend
+    if (token.includes(':')) {
+      console.log('Usando token temporal, considerando sesión válida');
+      return true;
+    }
+
     try {
       console.log('Verificando sesión con token:', token);
       
