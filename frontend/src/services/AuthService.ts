@@ -189,11 +189,19 @@ class AuthService {
       return false;
     }
 
-    // SOLUCIÓN TEMPORAL: Si estamos usando un token temporal (generado por el front)
-    // consideramos la sesión como válida sin verificar con el backend
-    if (token.includes(':')) {
-      console.log('Usando token temporal, considerando sesión válida');
-      return true;
+    // SOLUCIÓN TEMPORAL: Verificar si estamos usando un token temporal (generado por el front)
+    try {
+      // Intentar decodificar el token (base64)
+      const decodedToken = atob(token);
+      
+      // Si el token decodificado contiene un ':', es un token temporal generado por el frontend
+      if (decodedToken.includes(':')) {
+        console.log('Detectado token temporal, considerando sesión válida sin verificar con backend');
+        return true;
+      }
+    } catch (e) {
+      console.warn('Error al decodificar token para verificar si es temporal', e);
+      // Continuar con el proceso normal si hay error al decodificar
     }
 
     try {
