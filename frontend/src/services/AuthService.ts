@@ -1,4 +1,5 @@
 // AuthService.ts - Servicio de autenticación con soporte para múltiples plataformas
+import axios from 'axios';
 
 /**
  * Servicio de autenticación que utiliza múltiples métodos de almacenamiento
@@ -173,24 +174,35 @@ class AuthService {
     const token = this.getToken();
     
     if (!token) {
+      console.log('No hay token almacenado, sesión no válida');
       return false;
     }
 
     try {
-      // Simplificando la petición para evitar problemas de CORS
-      const response = await fetch('/auth/check', {
-        method: 'GET',
-        credentials: 'include'
+      console.log('Verificando sesión...');
+      
+      // Usar axios en lugar de fetch para mantener consistencia
+      const response = await axios.get('/auth/check', {
+        withCredentials: true
       });
-
-      if (!response.ok) {
-        throw new Error('Sesión inválida');
-      }
-
-      const data = await response.json();
-      return data.autenticado === true;
-    } catch (error) {
+      
+      console.log('Respuesta verificación de sesión:', response.data);
+      return response.data.autenticado === true;
+    } catch (error: any) {
       console.error('Error al verificar la sesión:', error);
+      
+      if (error.response) {
+        // El servidor respondió con un código de error
+        console.error('Error del servidor:', error.response.status, error.response.statusText);
+        console.error('Datos de error:', error.response.data);
+      } else if (error.request) {
+        // La petición fue hecha pero no se recibió respuesta
+        console.error('No se recibió respuesta del servidor al verificar sesión');
+      } else {
+        // Error al configurar la petición
+        console.error('Error al configurar la petición de verificación:', error.message);
+      }
+      
       // Limpiar token inválido
       this.logout();
       return false;

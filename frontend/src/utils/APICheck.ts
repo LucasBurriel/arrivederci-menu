@@ -18,19 +18,55 @@ export async function checkAPIConnection() {
     console.error('No se pudo acceder a la configuración de axios');
   }
 
-  // Comprobar si podemos hacer ping al servidor
+  // Probar si la URL del API es accesible (prueba directa con fetch)
   try {
-    const res = await fetch(`${API_URL ? API_URL : ''}/ping`, {
+    console.log('Probando conexión directa a:', API_URL);
+    const directRes = await fetch(API_URL, {
       method: 'GET',
       mode: 'cors'
     });
-    if (res.ok) {
-      console.log('✅ Conexión al API exitosa');
-    } else {
-      console.log('❌ Error conectando al API. Status:', res.status);
+    console.log('Respuesta de conexión directa:', directRes.status, directRes.statusText);
+    
+    // Si la respuesta es OK, intentar leer el contenido
+    if (directRes.ok) {
+      try {
+        const text = await directRes.text();
+        console.log('Respuesta del servidor (primeros 100 caracteres):', text.substring(0, 100));
+      } catch (e) {
+        console.error('Error al leer la respuesta:', e);
+      }
     }
   } catch (e) {
-    console.error('❌ Error al intentar conectar con el API:', e);
+    console.error('Error al probar conexión directa:', e);
+  }
+
+  // Probar un endpoint real de autenticación
+  try {
+    console.log('Probando endpoint de verificación de autenticación...');
+    const authCheckRes = await fetch(`${API_URL}/auth/check`, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include'
+    });
+    console.log('Respuesta de auth/check:', authCheckRes.status, authCheckRes.statusText);
+    
+    if (authCheckRes.ok) {
+      try {
+        const text = await authCheckRes.text();
+        console.log('Respuesta de auth/check (texto):', text);
+        
+        try {
+          const json = JSON.parse(text);
+          console.log('Respuesta de auth/check (JSON):', json);
+        } catch (e) {
+          console.error('Error al parsear JSON de auth/check:', e);
+        }
+      } catch (e) {
+        console.error('Error al leer respuesta de auth/check:', e);
+      }
+    }
+  } catch (e) {
+    console.error('Error al probar endpoint de autenticación:', e);
   }
   
   console.log('=========================');
