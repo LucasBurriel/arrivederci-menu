@@ -83,10 +83,25 @@ const Login: React.FC = () => {
         withCredentials: true
       });
       
-      console.log('Respuesta del servidor login:', response.data);
+      console.log('Respuesta del servidor login (completa):', response);
+      console.log('Respuesta del servidor login (datos):', response.data);
+      console.log('Respuesta del servidor login (headers):', response.headers);
+      console.log('Respuesta del servidor login (status):', response.status);
+      
+      // Verificar si hay un token en la respuesta
+      if (!response.data.token && !response.data.session_id) {
+        console.error('No se recibió un token o identificador de sesión en la respuesta');
+        setError('Error: El servidor no devolvió un token de autenticación. Contacta al administrador.');
+        setLoading(false);
+        return;
+      }
       
       // 2. Guardar el token usando el servicio de autenticación
-      const tokenGuardado = authService.setToken(response.data.token || 'session-token');
+      // Si no hay token, usamos session_id o un valor predeterminado
+      const tokenToSave = response.data.token || response.data.session_id || 'session-token';
+      console.log('Token a guardar:', tokenToSave);
+      
+      const tokenGuardado = authService.setToken(tokenToSave);
       
       if (!tokenGuardado) {
         console.error('No se pudo guardar el token en ningún almacenamiento');

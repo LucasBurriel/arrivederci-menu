@@ -8,6 +8,7 @@ import Login from './components/Login';
 import axios from 'axios';
 import authService from './services/AuthService';
 import checkAPIConnection from './utils/APICheck';
+import Debug from './components/Debug';
 
 // Configurar axios para incluir credenciales en todas las peticiones
 axios.defaults.withCredentials = true;
@@ -107,6 +108,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        
+        {/* Componente de depuración - solo visible en desarrollo */}
+        {import.meta.env.DEV && <Debug />}
       </Router>
     </ThemeProvider>
   );

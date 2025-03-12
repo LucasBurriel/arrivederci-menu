@@ -15,6 +15,12 @@ class AuthService {
    * para compatibilidad con diferentes dispositivos y modos de navegación
    */
   setToken(token: string): boolean {
+    if (!token) {
+      console.error('Intento de guardar un token vacío');
+      return false;
+    }
+    
+    console.log('Guardando token:', token);
     let almacenado = false;
     
     // Intentar todos los métodos disponibles de almacenamiento
@@ -24,6 +30,7 @@ class AuthService {
       () => {
         try {
           localStorage.setItem(this.AUTH_TOKEN_KEY, token);
+          console.log('✅ Token guardado en localStorage');
           return true;
         } catch (e) {
           console.warn('No se pudo usar localStorage', e);
@@ -35,6 +42,7 @@ class AuthService {
       () => {
         try {
           sessionStorage.setItem(this.AUTH_TOKEN_KEY, token);
+          console.log('✅ Token guardado en sessionStorage');
           return true;
         } catch (e) {
           console.warn('No se pudo usar sessionStorage', e);
@@ -45,10 +53,13 @@ class AuthService {
       // Método 3: cookies (compatibilidad con Safari)
       () => {
         try {
-          // Configuración de cookie compatible con Safari
+          // Configuración de cookie compatible con Safari y Railway
           const date = new Date();
           date.setTime(date.getTime() + 24 * 60 * 60 * 1000); // 1 día
-          document.cookie = `${this.AUTH_TOKEN_KEY}=${token}; expires=${date.toUTCString()}; path=/; SameSite=Strict`;
+          
+          // Usar una cookie sin SameSite para mayor compatibilidad con Railway
+          document.cookie = `${this.AUTH_TOKEN_KEY}=${token}; expires=${date.toUTCString()}; path=/`;
+          console.log('✅ Token guardado en cookies');
           return true;
         } catch (e) {
           console.warn('No se pudo usar cookies', e);
@@ -179,14 +190,18 @@ class AuthService {
     }
 
     try {
-      console.log('Verificando sesión...');
+      console.log('Verificando sesión con token:', token);
       
       // Usar axios en lugar de fetch para mantener consistencia
       const response = await axios.get('/auth/check', {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
-      console.log('Respuesta verificación de sesión:', response.data);
+      console.log('Respuesta verificación de sesión (completa):', response);
+      console.log('Respuesta verificación de sesión (datos):', response.data);
       return response.data.autenticado === true;
     } catch (error: any) {
       console.error('Error al verificar la sesión:', error);
