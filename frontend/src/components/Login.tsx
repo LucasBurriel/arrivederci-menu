@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import {
   Container,
   Paper,
@@ -8,9 +8,11 @@ import {
   Box,
   Alert,
   styled,
+  CircularProgress,
 } from '@mui/material';
 import axios, { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
+import authService from '../services/AuthService';
 
 // Estilos
 const LoginContainer = styled(Container)(({ theme }) => ({
@@ -41,7 +43,21 @@ const Login: React.FC = () => {
     password: '',
   });
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [storageError, setStorageError] = useState<boolean>(false);
   const navigate = useNavigate();
+
+  // Verificar si ya hay una sesión activa al cargar el componente
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      // Si ya hay una sesión activa, redirigir al panel de administración
+      if (await authService.verificarSesion()) {
+        navigate('/admin');
+      }
+    };
+    
+    checkExistingSession();
+  }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,19 +69,48 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setStorageError(false);
+    
     try {
       console.log('API URL being used:', import.meta.env.VITE_API_URL);
-      const response = await axios.post('/auth/login', credentials);
+      
+      // 1. Realizar la solicitud de login
+      const response = await axios.post('/auth/login', credentials, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        },
+        withCredentials: true
+      });
+      
       console.log('Respuesta del servidor:', response.data);
       
-      // Verificar que el login fue exitoso antes de redirigir
-      const checkResponse = await axios.get('/auth/check');
-      console.log('Verificación de autenticación:', checkResponse.data);
+      // 2. Guardar el token usando el servicio de autenticación
+      const tokenGuardado = authService.setToken(response.data.token || 'session-token');
       
-      if (checkResponse.data.autenticado) {
+      if (!tokenGuardado) {
+        console.error('No se pudo guardar el token en ningún almacenamiento');
+        setStorageError(true);
+        setError('Error: Tu navegador está bloqueando el almacenamiento necesario para iniciar sesión. Por favor, verifica la configuración de privacidad o prueba con otro navegador.');
+        setLoading(false);
+        return;
+      }
+      
+      // 3. Guardar información del usuario si está disponible
+      if (response.data.usuario) {
+        authService.setUser(response.data.usuario);
+      }
+      
+      // 4. Verificar que la sesión se estableció correctamente
+      const sesionVerificada = await authService.verificarSesion();
+      
+      if (sesionVerificada) {
         navigate('/admin');
       } else {
         setError('Error de autenticación: La sesión no se estableció correctamente');
+        authService.logout(); // Limpiar cualquier información parcial
       }
     } catch (err) {
       console.error('Error completo:', err);
@@ -80,6 +125,8 @@ const Login: React.FC = () => {
         console.error('Error de configuración:', error.message);
         setError('Error al configurar la petición: ' + error.message);
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -99,6 +146,22 @@ const Login: React.FC = () => {
             {error}
           </Alert>
         )}
+        
+        {storageError && (
+          <Alert 
+            severity="warning" 
+            sx={{ mb: 2, width: '100%' }}
+          >
+            Tu navegador puede estar bloqueando cookies o almacenamiento local necesario para el inicio de sesión.
+            <br />
+            Recomendaciones:
+            <ul>
+              <li>Verifica la configuración de privacidad de tu navegador</li>
+              <li>Desactiva el modo incógnito</li>
+              <li>Prueba con otro navegador</li>
+            </ul>
+          </Alert>
+        )}
 
         <LoginForm 
           component="form" 
@@ -114,6 +177,7 @@ const Login: React.FC = () => {
             margin="normal"
             required
             autoFocus
+            disabled={loading}
             inputProps={{
               'aria-label': 'Usuario'
             }}
@@ -127,6 +191,7 @@ const Login: React.FC = () => {
             onChange={handleChange}
             margin="normal"
             required
+            disabled={loading}
             inputProps={{
               'aria-label': 'Contraseña'
             }}
@@ -136,8 +201,9 @@ const Login: React.FC = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
           >
-            Iniciar Sesión
+            {loading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
           </Button>
         </LoginForm>
       </LoginPaper>

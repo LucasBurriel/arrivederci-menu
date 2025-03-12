@@ -30,6 +30,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import authService from '../services/AuthService';
 
 // Interfaces
 interface Producto {
@@ -111,13 +112,15 @@ const Admin: React.FC = () => {
   // Funciones
   const verificarAutenticacion = useCallback(async () => {
     try {
-      const response = await axios.get('/auth/check', {
-        withCredentials: true
-      });
-      if (!response.data.autenticado) {
+      // Usar el servicio de autenticación para verificar la sesión
+      const autenticado = await authService.verificarSesion();
+      
+      if (!autenticado) {
+        console.log('No autenticado, redirigiendo a login');
         navigate('/login');
       }
     } catch (error) {
+      console.error('Error al verificar autenticación:', error);
       navigate('/login');
     }
   }, [navigate]);
@@ -143,10 +146,25 @@ const Admin: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post('/auth/logout', {}, { withCredentials: true });
+      // Primero invalidar la sesión en el servidor
+      await axios.post('/auth/logout', {}, { 
+        withCredentials: true,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      // Luego limpiar el almacenamiento local
+      authService.logout();
+      
+      // Finalmente redirigir al login
       navigate('/login');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
+      // Incluso si hay un error, intentar limpiar el almacenamiento local
+      authService.logout();
+      navigate('/login');
     }
   };
 

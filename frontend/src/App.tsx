@@ -1,13 +1,31 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import React, { useEffect, useState } from 'react';
 import Menu from './components/Menu';
 import Admin from './components/Admin';
 import Login from './components/Login';
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
+import authService from './services/AuthService';
 
 // Configurar axios para incluir credenciales en todas las peticiones
 axios.defaults.withCredentials = true;
+
+// Añadir cabeceras para prevenir problemas de caché
+axios.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    // Solo añadir headers de caché a peticiones GET
+    if (config.method?.toLowerCase() === 'get') {
+      // Asegurar que headers existe y agregar los headers de caché
+      config.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      config.headers.set('Pragma', 'no-cache');
+    }
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
 
 const theme = createTheme({
   palette: {
@@ -32,6 +50,45 @@ const theme = createTheme({
   },
 });
 
+// Componente para rutas protegidas
+interface ProtectedRouteProps {
+  redirectPath?: string;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  redirectPath = '/login'
+}) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  useEffect(() => {
+    const verificarAutenticacion = async () => {
+      try {
+        const autenticado = await authService.verificarSesion();
+        setIsAuthenticated(autenticado);
+      } catch (error) {
+        console.error('Error al verificar autenticación:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    verificarAutenticacion();
+  }, []);
+  
+  // Mostrar algún indicador de carga mientras verificamos
+  if (isLoading) {
+    return <div>Verificando sesión...</div>;
+  }
+  
+  if (isAuthenticated === false) {
+    return <Navigate to={redirectPath} replace />;
+  }
+  
+  return <Outlet />;
+};
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -39,7 +96,12 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Menu />} />
-          <Route path="/admin" element={<Admin />} />
+          
+          {/* Rutas protegidas */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin" element={<Admin />} />
+          </Route>
+          
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
