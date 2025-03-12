@@ -12,6 +12,15 @@ import checkAPIConnection from './utils/APICheck';
 // Configurar axios para incluir credenciales en todas las peticiones
 axios.defaults.withCredentials = true;
 
+// Configurar la URL base para axios
+const apiUrl = import.meta.env.VITE_API_URL;
+if (apiUrl) {
+  console.log('Configurando baseURL de axios:', apiUrl);
+  axios.defaults.baseURL = apiUrl;
+} else {
+  console.warn('ADVERTENCIA: No se encontró VITE_API_URL en las variables de entorno');
+}
+
 // Eliminando el interceptor que estaba causando problemas CORS
 // Las cabeceras 'Cache-Control' no están permitidas en la respuesta de preflight
 

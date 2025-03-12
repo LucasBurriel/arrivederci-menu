@@ -74,14 +74,16 @@ const Login: React.FC = () => {
     setStorageError(false);
     
     try {
-      console.log('API URL being used:', import.meta.env.VITE_API_URL);
+      console.log('Iniciando proceso de login...');
+      console.log('API URL configurada:', import.meta.env.VITE_API_URL);
+      console.log('Axios baseURL:', axios.defaults.baseURL);
       
       // 1. Realizar la solicitud de login sin cabeceras personalizadas que causen problemas CORS
       const response = await axios.post('/auth/login', credentials, {
         withCredentials: true
       });
       
-      console.log('Respuesta del servidor:', response.data);
+      console.log('Respuesta del servidor login:', response.data);
       
       // 2. Guardar el token usando el servicio de autenticación
       const tokenGuardado = authService.setToken(response.data.token || 'session-token');
@@ -100,12 +102,14 @@ const Login: React.FC = () => {
       }
       
       // 4. Verificar que la sesión se estableció correctamente
+      console.log('Verificando sesión después del login...');
       const sesionVerificada = await authService.verificarSesion();
+      console.log('Resultado verificación sesión:', sesionVerificada);
       
       if (sesionVerificada) {
         navigate('/admin');
       } else {
-        setError('Error de autenticación: La sesión no se estableció correctamente');
+        setError('Error de autenticación: La sesión no se estableció correctamente. Intenta recargar la página o usar otro navegador.');
         authService.logout(); // Limpiar cualquier información parcial
       }
     } catch (err) {
@@ -113,10 +117,11 @@ const Login: React.FC = () => {
       const error = err as AxiosError<{ error: string }>;
       if (error.response) {
         console.error('Error del servidor:', error.response.data);
-        setError(error.response.data.error || 'Error del servidor: ' + error.response.status);
+        console.error('Status:', error.response.status, error.response.statusText);
+        setError(error.response.data.error || `Error del servidor: ${error.response.status} - ${error.response.statusText}`);
       } else if (error.request) {
         console.error('No se recibió respuesta:', error.request);
-        setError('No se pudo conectar con el servidor');
+        setError('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
       } else {
         console.error('Error de configuración:', error.message);
         setError('Error al configurar la petición: ' + error.message);
