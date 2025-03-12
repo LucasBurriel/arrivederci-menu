@@ -5,27 +5,15 @@ import React, { useEffect, useState } from 'react';
 import Menu from './components/Menu';
 import Admin from './components/Admin';
 import Login from './components/Login';
-import axios, { InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import authService from './services/AuthService';
+import checkAPIConnection from './utils/APICheck';
 
 // Configurar axios para incluir credenciales en todas las peticiones
 axios.defaults.withCredentials = true;
 
-// Añadir cabeceras para prevenir problemas de caché
-axios.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // Solo añadir headers de caché a peticiones GET
-    if (config.method?.toLowerCase() === 'get') {
-      // Asegurar que headers existe y agregar los headers de caché
-      config.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      config.headers.set('Pragma', 'no-cache');
-    }
-    return config;
-  },
-  error => {
-    return Promise.reject(error);
-  }
-);
+// Eliminando el interceptor que estaba causando problemas CORS
+// Las cabeceras 'Cache-Control' no están permitidas en la respuesta de preflight
 
 const theme = createTheme({
   palette: {
@@ -90,6 +78,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 };
 
 function App() {
+  useEffect(() => {
+    // Verificar la conexión con el API al iniciar la aplicación
+    checkAPIConnection();
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

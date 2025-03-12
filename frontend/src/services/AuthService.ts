@@ -177,17 +177,9 @@ class AuthService {
     }
 
     try {
-      // Configuración específica para prevenir problemas de caché en Safari
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      };
-
-      // Esta URL debe coincidir con tu endpoint de verificación
+      // Simplificando la petición para evitar problemas de CORS
       const response = await fetch('/auth/check', {
         method: 'GET',
-        headers,
         credentials: 'include'
       });
 

@@ -146,13 +146,9 @@ const Admin: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      // Primero invalidar la sesión en el servidor
+      // Simplificando la petición para evitar problemas de CORS
       await axios.post('/auth/logout', {}, { 
-        withCredentials: true,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
+        withCredentials: true
       });
       
       // Luego limpiar el almacenamiento local

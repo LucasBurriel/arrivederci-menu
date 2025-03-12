@@ -76,12 +76,8 @@ const Login: React.FC = () => {
     try {
       console.log('API URL being used:', import.meta.env.VITE_API_URL);
       
-      // 1. Realizar la solicitud de login
+      // 1. Realizar la solicitud de login sin cabeceras personalizadas que causen problemas CORS
       const response = await axios.post('/auth/login', credentials, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        },
         withCredentials: true
       });
       
