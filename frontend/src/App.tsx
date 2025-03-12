@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import Menu from './components/Menu';
 import Admin from './components/Admin';
 import Login from './components/Login';
-import axios, { InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import authService from './services/AuthService';
 import checkAPIConnection from './utils/APICheck';
 
